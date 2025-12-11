@@ -112,7 +112,7 @@ export function extractValue(
 
 	// Handle BooleanValue
 	if (obsidianValue instanceof BooleanValue) {
-		const boolVal = (obsidianValue as unknown as PrimitiveValueInternal<boolean>).value;
+		const boolVal = obsidianValue.isTruthy();
 		return {
 			value: boolVal ? 1 : 0,
 			displayValue: boolVal ? 'Yes' : 'No',
@@ -122,7 +122,14 @@ export function extractValue(
 
 	// Handle NumberValue
 	if (obsidianValue instanceof NumberValue) {
-		const numVal = (obsidianValue as unknown as PrimitiveValueInternal<number>).value;
+		const numVal = Number(obsidianValue.toString());
+		if (isNaN(numVal)) {
+			return {
+				value: null,
+				displayValue: obsidianValue.toString(),
+				type: 'unsupported',
+			};
+		}
 		return {
 			value: numVal,
 			displayValue: String(numVal),
@@ -132,7 +139,7 @@ export function extractValue(
 
 	// Handle StringValue - try to parse as number or boolean
 	if (obsidianValue instanceof StringValue) {
-		const strVal = (obsidianValue as unknown as PrimitiveValueInternal<string>).value;
+		const strVal = obsidianValue.toString();
 
 		// Try parsing as number
 		const num = parseFloat(strVal);
@@ -262,7 +269,10 @@ export function detectValueType(
 		if (obsidianValue instanceof BooleanValue) {
 			seenBoolean = true;
 		} else if (obsidianValue instanceof NumberValue) {
-			const numVal = (obsidianValue as unknown as PrimitiveValueInternal<number>).value;
+			const numVal = Number(obsidianValue.toString());
+			if (isNaN(numVal)) {
+				return 'unsupported';
+			}
 			// Check if it's used as a boolean (0 or 1) or as a real number
 			if (numVal !== 0 && numVal !== 1) {
 				seenNumber = true;
@@ -270,7 +280,7 @@ export function detectValueType(
 				seenBoolean = true;
 			}
 		} else if (obsidianValue instanceof StringValue) {
-			const strVal = (obsidianValue as unknown as PrimitiveValueInternal<string>).value;
+			const strVal = obsidianValue.toString();
 			const num = parseFloat(strVal);
 			if (!isNaN(num)) {
 				if (num !== 0 && num !== 1) {
