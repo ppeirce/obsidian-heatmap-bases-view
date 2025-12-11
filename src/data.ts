@@ -10,7 +10,7 @@ import {
 	DateValue,
 } from 'obsidian';
 import { HeatmapEntry, ProcessedData } from './types';
-import { parseDateFromFilename, formatDateISO } from './dateUtils';
+import { parseDateFromFilename, formatDateISO, parseISODateString } from './dateUtils';
 
 /**
  * Value types that can be visualized in the heatmap.
@@ -85,13 +85,13 @@ export function extractDate(
 	if (value instanceof DateValue) {
 		const dateStr = value.toString();
 		// DateValue.toString() should return ISO format
-		const parsed = new Date(dateStr);
+		const parsed = parseISODateString(dateStr) ?? new Date(dateStr);
 		return !isNaN(parsed.getTime()) ? formatDateISO(parsed) : null;
 	}
 
 	// Try to parse from string representation
 	const strValue = value.toString();
-	const parsed = new Date(strValue);
+	const parsed = parseISODateString(strValue) ?? new Date(strValue);
 	return !isNaN(parsed.getTime()) ? formatDateISO(parsed) : null;
 }
 

@@ -5,6 +5,7 @@ import {
 	getWeekNumber,
 	generateMonthLabels,
 	getWeekdayLabels,
+	parseISODateString,
 } from './dateUtils';
 import {
 	calculateIntensityNumeric,
@@ -258,7 +259,10 @@ export function renderHeatmap(
 
 	// Create cells for each date
 	for (const dateStr of allDates) {
-		const date = new Date(dateStr);
+		const date = parseISODateString(dateStr) ?? new Date(dateStr);
+		if (isNaN(date.getTime())) {
+			continue;
+		}
 		const dayOfWeek = getDayOfWeek(date, weekStart);
 		const weekNum = getWeekNumber(date, dateRange.start, weekStart);
 

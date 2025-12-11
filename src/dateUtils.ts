@@ -1,5 +1,29 @@
 import { DateRange, MonthLabel } from './types';
 
+const ISO_DATE_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * Parse an ISO date string (YYYY-MM-DD) into a Date at local midnight.
+ */
+export function parseISODateString(dateStr: string): Date | null {
+	const match = ISO_DATE_REGEX.exec(dateStr.trim());
+	if (!match) {
+		return null;
+	}
+
+	const year = Number(match[1]);
+	const month = Number(match[2]) - 1;
+	const day = Number(match[3]);
+
+	if (isNaN(year) || isNaN(month) || isNaN(day)) {
+		return null;
+	}
+
+	const date = new Date(year, month, day);
+	date.setHours(0, 0, 0, 0);
+	return date;
+}
+
 /**
  * Patterns for parsing dates from daily note filenames.
  */
@@ -27,8 +51,15 @@ export function parseDateFromFilename(filename: string): Date | null {
 				dateStr = match[1];
 			}
 
+			// If we have a standard ISO string, parse manually to avoid timezone shifts
+			const isoParsed = parseISODateString(dateStr);
+			if (isoParsed) {
+				return isoParsed;
+			}
+
 			const parsed = new Date(dateStr);
 			if (!isNaN(parsed.getTime())) {
+				parsed.setHours(0, 0, 0, 0);
 				return parsed;
 			}
 		}
@@ -50,8 +81,14 @@ export function parseDateFromProperty(value: unknown): Date | null {
 
 	if (typeof value === 'string') {
 		// Try ISO date format first
+		const isoParsed = parseISODateString(value);
+		if (isoParsed) {
+			return isoParsed;
+		}
+
 		const parsed = new Date(value);
 		if (!isNaN(parsed.getTime())) {
+			parsed.setHours(0, 0, 0, 0);
 			return parsed;
 		}
 	}
@@ -81,7 +118,10 @@ export function formatDateISO(date: Date): string {
  * Format a date string for display in tooltips.
  */
 export function formatDateDisplay(dateStr: string): string {
-	const date = new Date(dateStr);
+	const date = parseISODateString(dateStr) ?? new Date(dateStr);
+	if (isNaN(date.getTime())) {
+		return dateStr;
+	}
 	return date.toLocaleDateString(undefined, {
 		weekday: 'short',
 		year: 'numeric',
@@ -123,6 +163,7 @@ export function getDayOfWeek(date: Date, weekStart: 0 | 1): number {
 
 /**
  * Get the week number within a date range.
+ * Week 1 always contains the range start date.
  */
 export function getWeekNumber(date: Date, rangeStart: Date, weekStart: 0 | 1): number {
 	// Clone and normalize dates to midnight
@@ -132,16 +173,17 @@ export function getWeekNumber(date: Date, rangeStart: Date, weekStart: 0 | 1): n
 	const start = new Date(rangeStart);
 	start.setHours(0, 0, 0, 0);
 
-	// Find the start of the first week in the range
-	const firstDayOfWeek = getDayOfWeek(start, weekStart);
-	const firstWeekStart = new Date(start);
-	firstWeekStart.setDate(firstWeekStart.getDate() - firstDayOfWeek);
-
-	// Calculate weeks since first week start
-	const diffMs = d.getTime() - firstWeekStart.getTime();
+	// Calculate days since range start
+	const diffMs = d.getTime() - start.getTime();
 	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-	return Math.floor(diffDays / 7) + 1;
+	// Get the day-of-week offset for the start date
+	const startDayOfWeek = getDayOfWeek(start, weekStart);
+
+	// Week number = (days since start + start's day offset) / 7 + 1
+	// This ensures the start date is always in week 1, and subsequent
+	// weeks advance when we cross a week boundary
+	return Math.floor((diffDays + startDayOfWeek) / 7) + 1;
 }
 
 /**
@@ -159,7 +201,10 @@ export function calculateDateRange(
 
 	// Determine end date
 	if (endDate) {
-		end = new Date(endDate);
+		end = parseISODateString(endDate) ?? new Date(endDate);
+		if (isNaN(end.getTime())) {
+			end = new Date();
+		}
 	} else {
 		end = new Date();
 	}
@@ -167,11 +212,14 @@ export function calculateDateRange(
 
 	// Determine start date
 	if (startDate) {
-		start = new Date(startDate);
+		start = parseISODateString(startDate) ?? new Date(startDate);
+		if (isNaN(start.getTime())) {
+			start = new Date(end.getFullYear(), 0, 1);
+		}
 	} else {
 		// Auto-detect from data or default to start of current year
 		const dates = Array.from(entries.keys())
-			.map(d => new Date(d))
+			.map(d => parseISODateString(d) ?? new Date(d))
 			.filter(d => !isNaN(d.getTime()))
 			.sort((a, b) => a.getTime() - b.getTime());
 

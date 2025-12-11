@@ -1,6 +1,6 @@
 import { App, setTooltip } from 'obsidian';
 import { HeatmapEntry } from './types';
-import { formatDateDisplay } from './dateUtils';
+import { formatDateDisplay, parseISODateString } from './dateUtils';
 
 export interface InteractionHandlerOptions {
 	app: App;
@@ -120,7 +120,8 @@ function navigateToAdjacentCell(
 	const currentDate = currentCell.dataset.date;
 	if (!currentDate) return;
 
-	const date = new Date(currentDate);
+	const date = parseISODateString(currentDate) ?? new Date(currentDate);
+	if (isNaN(date.getTime())) return;
 	let targetDate: Date;
 
 	switch (key) {
