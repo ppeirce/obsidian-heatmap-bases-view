@@ -9,6 +9,25 @@ import { renderHeatmap, createEmptyState, RenderOptions } from './renderer';
 import { setupInteractions } from './interactions';
 import { calculateDateRange } from './dateUtils';
 
+declare global {
+	interface Window {
+		HEATMAP_DEBUG?: boolean;
+	}
+}
+
+type HeatmapQueryController = QueryController & {
+	runQuery?: () => void;
+	notifyView?: (viewType: string, event: string) => void;
+};
+
+function debugLog(...args: unknown[]): void {
+	if (typeof window === 'undefined' || !window.HEATMAP_DEBUG) {
+		return;
+	}
+	// eslint-disable-next-line no-console
+	console.log('[HeatmapView]', ...args);
+}
+
 /**
  * Heatmap view implementation for Obsidian Bases.
  */
@@ -16,15 +35,45 @@ export class HeatmapView extends BasesView {
 	type = 'heatmap';
 
 	private containerEl: HTMLElement;
+	private isViewVisible = false;
+
+	onload(): void {
+		super.onload();
+		debugLog('HeatmapView onload');
+		this.isViewVisible = true;
+		if (!this.processedData) {
+			this.requestInitialQuery();
+		}
+	}
+
+	onunload(): void {
+		super.onunload();
+		debugLog('HeatmapView onunload');
+		this.isViewVisible = false;
+	}
+	private controllerRef: HeatmapQueryController;
 	private cleanupInteractions: (() => void) | null = null;
 	private processedData: ProcessedData | null = null;
+	private initialQueryRequested = false;
 
 	constructor(
 		controller: QueryController,
 		containerEl: HTMLElement
 	) {
 		super(controller);
+		this.controllerRef = controller as HeatmapQueryController;
 		this.containerEl = containerEl;
+		debugLog('Constructed HeatmapView');
+		if (window.HEATMAP_DEBUG) {
+			try {
+				const proto = Object.getPrototypeOf(controller) ?? {};
+				debugLog('QueryController prototype methods', Object.getOwnPropertyNames(proto));
+			} catch (err) {
+				debugLog('Failed to inspect controller prototype', err);
+			}
+		}
+
+		this.requestInitialQuery();
 	}
 
 	/**
@@ -49,6 +98,12 @@ export class HeatmapView extends BasesView {
 	 * Called when query data changes.
 	 */
 	onDataUpdated(): void {
+		debugLog('onDataUpdated called', {
+			entryCount: this.data?.data?.length ?? 0,
+		});
+		if (!this.initialQueryRequested) {
+			this.requestInitialQuery();
+		}
 		this.render();
 	}
 
@@ -56,6 +111,7 @@ export class HeatmapView extends BasesView {
 	 * Render the heatmap view.
 	 */
 	private render(): void {
+		debugLog('render start');
 		// Clean up previous interactions
 		if (this.cleanupInteractions) {
 			this.cleanupInteractions();
@@ -70,6 +126,7 @@ export class HeatmapView extends BasesView {
 
 		// Check for required configuration
 		if (!viewConfig.valueProperty) {
+			debugLog('render aborted: missing valueProperty');
 			const emptyState = createEmptyState(
 				'Configure value property',
 				'Select a property to visualize in the view settings.'
@@ -83,6 +140,17 @@ export class HeatmapView extends BasesView {
 		const entries: BasesEntry[] = queryData?.data || [];
 
 		if (entries.length === 0) {
+			if (this.requestInitialQuery()) {
+				debugLog('render waiting for query results');
+				const emptyState = createEmptyState(
+					'Loading data…',
+					'Fetching notes for this Base.'
+				);
+				this.containerEl.appendChild(emptyState);
+				return;
+			}
+
+			debugLog('render aborted: no entries from query');
 			const emptyState = createEmptyState(
 				'No data to display',
 				'No notes found in the current filter. Check your Base filters.'
@@ -94,6 +162,7 @@ export class HeatmapView extends BasesView {
 		// Detect value type for validation
 		const valueType = detectValueType(entries, viewConfig.valueProperty, viewConfig.dateProperty);
 		if (valueType === 'unsupported') {
+			debugLog('render aborted: unsupported property type');
 			const emptyState = createEmptyState(
 				'Unsupported property type',
 				`"${viewConfig.valueProperty}" is not a boolean or number property. Heatmap requires boolean or number properties.`
@@ -111,6 +180,7 @@ export class HeatmapView extends BasesView {
 
 		// Check if we have any valid dated entries
 		if (this.processedData.entries.size === 0) {
+			debugLog('render aborted: no dated entries after processing');
 			const emptyState = createEmptyState(
 				'No dated notes found',
 				'No notes with valid dates were found. Check your date property setting.'
@@ -134,6 +204,12 @@ export class HeatmapView extends BasesView {
 			showMonthLabels: viewConfig.showMonthLabels,
 		};
 
+		debugLog('render proceeding', {
+			entryCount: this.processedData.entries.size,
+			stats: this.processedData.stats,
+			viewConfig,
+		});
+
 		// Render heatmap
 		const heatmapEl = renderHeatmap(this.processedData, dateRange, renderOptions);
 		this.containerEl.appendChild(heatmapEl);
@@ -144,5 +220,34 @@ export class HeatmapView extends BasesView {
 			entries: this.processedData.entries,
 			containerEl: heatmapEl,
 		});
+	}
+
+	/**
+	 * Ensure the Bases query has been executed when this view is active.
+	 * Returns true if a query was requested during this call.
+	 */
+	private requestInitialQuery(): boolean {
+		if (this.initialQueryRequested || !this.isViewVisible) {
+			return false;
+		}
+
+		this.initialQueryRequested = true;
+		try {
+			if (typeof this.controllerRef.runQuery === 'function') {
+				this.controllerRef.runQuery();
+				debugLog('Requested initial Bases query via runQuery()');
+			} else if (typeof this.controllerRef.notifyView === 'function') {
+				this.controllerRef.notifyView(this.type, 'request-query');
+				debugLog('Requested initial Bases query via notifyView()');
+			} else {
+				debugLog('No supported method to request Bases query');
+				this.initialQueryRequested = false;
+				return false;
+			}
+		} catch (err) {
+			this.initialQueryRequested = false;
+			debugLog('Failed to run initial query', err);
+		}
+		return true;
 	}
 }
