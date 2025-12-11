@@ -10,7 +10,7 @@ import {
 import {
 	calculateIntensityNumeric,
 	calculateIntensityBoolean,
-	intensityToLevel,
+	getColorForIntensity,
 	COLOR_SCHEMES,
 	isDarkMode,
 } from './colorUtils';
@@ -36,11 +36,11 @@ function getCellState(
 		return { type: 'empty' };
 	}
 
-	if (entry.value === null || entry.value === 0) {
+	if (entry.value === null) {
 		return { type: 'zero', note: entry.note };
 	}
 
-	// Calculate intensity
+	// Calculate intensity - 0 is now part of the gradient
 	let intensity: number;
 	if (stats.hasNumeric) {
 		intensity = calculateIntensityNumeric(entry.value, stats.min, stats.max);
@@ -60,7 +60,8 @@ function createCellElement(
 	state: CellState,
 	row: number,
 	column: number,
-	entry: HeatmapEntry | undefined
+	entry: HeatmapEntry | undefined,
+	colorScheme: ColorScheme
 ): HTMLElement {
 	const cell = document.createElement('div');
 	cell.className = 'heatmap-cell';
@@ -68,18 +69,20 @@ function createCellElement(
 	cell.style.gridRow = String(row);
 	cell.style.gridColumn = String(column);
 
+	const dark = isDarkMode();
+
 	if (state.type === 'empty') {
 		cell.classList.add('heatmap-cell--empty');
 	} else if (state.type === 'zero') {
+		// Note exists but value is null - style like empty but still clickable
 		cell.classList.add('heatmap-cell--zero');
 		cell.dataset.notePath = state.note.path;
+		// No backgroundColor set - uses CSS default (same as empty)
 	} else if (state.type === 'filled') {
 		cell.classList.add('heatmap-cell--filled');
 		cell.dataset.notePath = state.note.path;
 		cell.dataset.intensity = String(state.intensity);
-
-		const level = intensityToLevel(state.intensity);
-		cell.classList.add(`heatmap-cell--level-${level}`);
+		cell.style.backgroundColor = getColorForIntensity(state.intensity, colorScheme, dark);
 	}
 
 	// Store display value for tooltip
@@ -142,6 +145,7 @@ function createWeekdayLabels(weekStart: 0 | 1): HTMLElement {
 
 /**
  * Create the legend component.
+ * Shows a smooth gradient from zero to max intensity.
  */
 function createLegend(colorScheme: ColorScheme): HTMLElement {
 	const legend = document.createElement('div');
@@ -155,10 +159,14 @@ function createLegend(colorScheme: ColorScheme): HTMLElement {
 	const cellsContainer = document.createElement('div');
 	cellsContainer.className = 'heatmap-legend-cells';
 
-	// Create 5 legend cells (level 0-4)
-	for (let i = 0; i <= 4; i++) {
+	const dark = isDarkMode();
+
+	// Create 5 legend cells showing smooth gradient (0%, 25%, 50%, 75%, 100%)
+	const intensities = [0, 0.25, 0.5, 0.75, 1];
+	for (const intensity of intensities) {
 		const cell = document.createElement('div');
-		cell.className = `heatmap-legend-cell heatmap-cell--level-${i}`;
+		cell.className = 'heatmap-legend-cell';
+		cell.style.backgroundColor = getColorForIntensity(intensity, colorScheme, dark);
 		cellsContainer.appendChild(cell);
 	}
 
@@ -274,7 +282,8 @@ export function renderHeatmap(
 			state,
 			dayOfWeek + 1, // 1-indexed for CSS grid
 			weekNum,
-			entry
+			entry,
+			colorScheme
 		);
 
 		cellsContainer.appendChild(cell);

@@ -124,126 +124,14 @@
 	outline-color: transparent;
 }
 
-/* Zero cell - note exists but value is 0/false */
+/* Zero cell - note exists but value is null/undefined */
 .heatmap-cell--zero {
-	background-color: var(--heatmap-color-zero, var(--background-modifier-border));
+	background-color: var(--background-secondary);
 }
 
 /* Filled cell - note exists with positive value */
 .heatmap-cell--filled {
-	/* Color set by level classes */
-}
-
-/* Color scheme: Green (GitHub-style) - Dark mode */
-.heatmap--dark.heatmap--green {
-	--heatmap-color-zero: #161b22;
-	--heatmap-color-l1: #0e4429;
-	--heatmap-color-l2: #006d32;
-	--heatmap-color-l3: #26a641;
-	--heatmap-color-l4: #39d353;
-}
-
-/* Color scheme: Green (GitHub-style) - Light mode */
-.heatmap--light.heatmap--green {
-	--heatmap-color-zero: #ebedf0;
-	--heatmap-color-l1: #9be9a8;
-	--heatmap-color-l2: #40c463;
-	--heatmap-color-l3: #30a14e;
-	--heatmap-color-l4: #216e39;
-}
-
-/* Color scheme: Purple - Dark mode */
-.heatmap--dark.heatmap--purple {
-	--heatmap-color-zero: #1a1523;
-	--heatmap-color-l1: #3b1d71;
-	--heatmap-color-l2: #5b21b6;
-	--heatmap-color-l3: #7c3aed;
-	--heatmap-color-l4: #a78bfa;
-}
-
-/* Color scheme: Purple - Light mode */
-.heatmap--light.heatmap--purple {
-	--heatmap-color-zero: #ebedf0;
-	--heatmap-color-l1: #d8b4fe;
-	--heatmap-color-l2: #a78bfa;
-	--heatmap-color-l3: #7c3aed;
-	--heatmap-color-l4: #5b21b6;
-}
-
-/* Color scheme: Blue - Dark mode */
-.heatmap--dark.heatmap--blue {
-	--heatmap-color-zero: #161b22;
-	--heatmap-color-l1: #0c4a6e;
-	--heatmap-color-l2: #0369a1;
-	--heatmap-color-l3: #0ea5e9;
-	--heatmap-color-l4: #38bdf8;
-}
-
-/* Color scheme: Blue - Light mode */
-.heatmap--light.heatmap--blue {
-	--heatmap-color-zero: #ebedf0;
-	--heatmap-color-l1: #bae6fd;
-	--heatmap-color-l2: #7dd3fc;
-	--heatmap-color-l3: #38bdf8;
-	--heatmap-color-l4: #0284c7;
-}
-
-/* Color scheme: Orange - Dark mode */
-.heatmap--dark.heatmap--orange {
-	--heatmap-color-zero: #1c1917;
-	--heatmap-color-l1: #7c2d12;
-	--heatmap-color-l2: #c2410c;
-	--heatmap-color-l3: #ea580c;
-	--heatmap-color-l4: #fb923c;
-}
-
-/* Color scheme: Orange - Light mode */
-.heatmap--light.heatmap--orange {
-	--heatmap-color-zero: #ebedf0;
-	--heatmap-color-l1: #fed7aa;
-	--heatmap-color-l2: #fdba74;
-	--heatmap-color-l3: #fb923c;
-	--heatmap-color-l4: #ea580c;
-}
-
-/* Color scheme: Gray - Dark mode */
-.heatmap--dark.heatmap--gray {
-	--heatmap-color-zero: #161b22;
-	--heatmap-color-l1: #2d333b;
-	--heatmap-color-l2: #444c56;
-	--heatmap-color-l3: #768390;
-	--heatmap-color-l4: #adbac7;
-}
-
-/* Color scheme: Gray - Light mode */
-.heatmap--light.heatmap--gray {
-	--heatmap-color-zero: #ebedf0;
-	--heatmap-color-l1: #c6d0da;
-	--heatmap-color-l2: #9ba6b0;
-	--heatmap-color-l3: #6e7681;
-	--heatmap-color-l4: #444c56;
-}
-
-/* Apply colors to intensity levels */
-.heatmap-cell--level-0,
-.heatmap-cell--zero {
-	background-color: var(--heatmap-color-zero);
-}
-
-.heatmap-cell--level-1 {
-	background-color: var(--heatmap-color-l1);
-}
-
-.heatmap-cell--level-2 {
-	background-color: var(--heatmap-color-l2);
-}
-
-.heatmap-cell--level-3 {
-	background-color: var(--heatmap-color-l3);
-}
-
-.heatmap-cell--level-4 {
-	background-color: var(--heatmap-color-l4);
+	/* Color set inline via JavaScript with smooth interpolation */
 }
 
 /* Legend */

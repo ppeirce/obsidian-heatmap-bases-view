@@ -34,6 +34,12 @@ export class HeatmapView extends BasesView {
 	private getConfig(): HeatmapViewConfig {
 		const config = this.config;
 
+		// Parse optional numeric values
+		const minValueStr = config.get('minValue') as string;
+		const maxValueStr = config.get('maxValue') as string;
+		const minValue = minValueStr ? parseFloat(minValueStr) : null;
+		const maxValue = maxValueStr ? parseFloat(maxValueStr) : null;
+
 		return {
 			dateProperty: (config.get('dateProperty') as string) || '__filename__',
 			valueProperty: (config.get('valueProperty') as string) || '',
@@ -43,6 +49,8 @@ export class HeatmapView extends BasesView {
 			weekStart: parseInt(config.get('weekStart') as string || '0', 10) as 0 | 1,
 			showWeekdayLabels: config.get('showWeekdayLabels') !== false,
 			showMonthLabels: config.get('showMonthLabels') !== false,
+			minValue: minValue !== null && !isNaN(minValue) ? minValue : null,
+			maxValue: maxValue !== null && !isNaN(maxValue) ? maxValue : null,
 		};
 	}
 
@@ -115,6 +123,14 @@ export class HeatmapView extends BasesView {
 			viewConfig.dateProperty,
 			viewConfig.valueProperty
 		);
+
+		// Override stats with config values if provided
+		if (viewConfig.minValue !== null) {
+			this.processedData.stats.min = viewConfig.minValue;
+		}
+		if (viewConfig.maxValue !== null) {
+			this.processedData.stats.max = viewConfig.maxValue;
+		}
 
 		// Check if we have any valid dated entries
 		if (this.processedData.entries.size === 0) {

@@ -106,7 +106,32 @@ function buildTooltipContent(
 	}
 
 	const displayValue = cell.dataset.displayValue || entry.displayValue;
-	return `${formattedDate}\n${displayValue}`;
+	const hexColor = cell.style.backgroundColor ? rgbToHex(cell.style.backgroundColor) : '';
+	const colorInfo = hexColor ? `\n${hexColor}` : '';
+	return `${formattedDate}\n${displayValue}${colorInfo}`;
+}
+
+/**
+ * Convert RGB color string to hex.
+ */
+function rgbToHex(rgb: string): string {
+	// Handle hex strings passed through
+	if (rgb.startsWith('#')) {
+		return rgb;
+	}
+
+	// Parse rgb(r, g, b) format
+	const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+	if (!match) {
+		return rgb;
+	}
+
+	const r = parseInt(match[1], 10);
+	const g = parseInt(match[2], 10);
+	const b = parseInt(match[3], 10);
+
+	const toHex = (n: number) => n.toString(16).padStart(2, '0');
+	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
 /**

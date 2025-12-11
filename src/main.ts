@@ -74,6 +74,18 @@ export default class HeatmapPlugin extends Plugin {
 					displayName: 'Show month labels',
 					default: true,
 				},
+				{
+					type: 'text',
+					key: 'minValue',
+					displayName: 'Min value',
+					placeholder: 'Auto (based on data)',
+				},
+				{
+					type: 'text',
+					key: 'maxValue',
+					displayName: 'Max value',
+					placeholder: 'Auto (based on data)',
+				},
 			],
 		});
 	}

@@ -35,6 +35,8 @@ export interface HeatmapViewConfig {
 	weekStart: 0 | 1;          // 0 = Sunday, 1 = Monday
 	showWeekdayLabels: boolean;
 	showMonthLabels: boolean;
+	minValue: number | null;   // override min for intensity scale (null = auto)
+	maxValue: number | null;   // override max for intensity scale (null = auto)
 }
 
 export type ColorScheme = 'green' | 'purple' | 'blue' | 'orange' | 'gray';

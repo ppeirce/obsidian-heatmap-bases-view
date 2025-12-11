@@ -2,22 +2,17 @@ import { ColorScheme } from './types';
 
 /**
  * Color scheme definitions with light and dark variants.
- * Each scheme has 5 levels: empty, zero (l0), and 4 intensity levels (l1-l4).
+ * Each scheme has a zero color (for 0/null values) and a max color.
+ * Intermediate intensities are interpolated between zero and max.
  */
 export interface ColorSchemeDefinition {
 	dark: {
 		zero: string;
-		l1: string;
-		l2: string;
-		l3: string;
-		l4: string;
+		max: string;
 	};
 	light: {
 		zero: string;
-		l1: string;
-		l2: string;
-		l3: string;
-		l4: string;
+		max: string;
 	};
 }
 
@@ -25,84 +20,175 @@ export const COLOR_SCHEMES: Record<ColorScheme, ColorSchemeDefinition> = {
 	green: {
 		dark: {
 			zero: '#161b22',
-			l1: '#0e4429',
-			l2: '#006d32',
-			l3: '#26a641',
-			l4: '#39d353',
+			max: '#39d353',
 		},
 		light: {
 			zero: '#ebedf0',
-			l1: '#9be9a8',
-			l2: '#40c463',
-			l3: '#30a14e',
-			l4: '#216e39',
+			max: '#216e39',
 		},
 	},
 	purple: {
 		dark: {
 			zero: '#1a1523',
-			l1: '#3b1d71',
-			l2: '#5b21b6',
-			l3: '#7c3aed',
-			l4: '#a78bfa',
+			max: '#a78bfa',
 		},
 		light: {
 			zero: '#ebedf0',
-			l1: '#d8b4fe',
-			l2: '#a78bfa',
-			l3: '#7c3aed',
-			l4: '#5b21b6',
+			max: '#5b21b6',
 		},
 	},
 	blue: {
 		dark: {
 			zero: '#161b22',
-			l1: '#0c4a6e',
-			l2: '#0369a1',
-			l3: '#0ea5e9',
-			l4: '#38bdf8',
+			max: '#38bdf8',
 		},
 		light: {
 			zero: '#ebedf0',
-			l1: '#bae6fd',
-			l2: '#7dd3fc',
-			l3: '#38bdf8',
-			l4: '#0284c7',
+			max: '#0284c7',
 		},
 	},
 	orange: {
 		dark: {
 			zero: '#1c1917',
-			l1: '#7c2d12',
-			l2: '#c2410c',
-			l3: '#ea580c',
-			l4: '#fb923c',
+			max: '#fb923c',
 		},
 		light: {
 			zero: '#ebedf0',
-			l1: '#fed7aa',
-			l2: '#fdba74',
-			l3: '#fb923c',
-			l4: '#ea580c',
+			max: '#ea580c',
 		},
 	},
 	gray: {
 		dark: {
 			zero: '#161b22',
-			l1: '#2d333b',
-			l2: '#444c56',
-			l3: '#768390',
-			l4: '#adbac7',
+			max: '#adbac7',
 		},
 		light: {
 			zero: '#ebedf0',
-			l1: '#c6d0da',
-			l2: '#9ba6b0',
-			l3: '#6e7681',
-			l4: '#444c56',
+			max: '#444c56',
 		},
 	},
 };
+
+/**
+ * Parse a hex color string to RGB values.
+ */
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+	const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	if (!result) {
+		return { r: 0, g: 0, b: 0 };
+	}
+	return {
+		r: parseInt(result[1], 16),
+		g: parseInt(result[2], 16),
+		b: parseInt(result[3], 16),
+	};
+}
+
+/**
+ * Convert RGB to hex color string.
+ */
+function rgbToHex(r: number, g: number, b: number): string {
+	const toHex = (n: number) => {
+		const clamped = Math.max(0, Math.min(255, Math.round(n)));
+		return clamped.toString(16).padStart(2, '0');
+	};
+	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/**
+ * Convert linear RGB component to sRGB.
+ */
+function linearToSrgb(c: number): number {
+	if (c <= 0.0031308) {
+		return c * 12.92;
+	}
+	return 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+}
+
+/**
+ * Convert sRGB component to linear RGB.
+ */
+function srgbToLinear(c: number): number {
+	if (c <= 0.04045) {
+		return c / 12.92;
+	}
+	return Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+/**
+ * Convert RGB (0-255) to Oklab.
+ */
+function rgbToOklab(r: number, g: number, b: number): { L: number; a: number; b: number } {
+	// Convert to linear sRGB
+	const lr = srgbToLinear(r / 255);
+	const lg = srgbToLinear(g / 255);
+	const lb = srgbToLinear(b / 255);
+
+	// Convert to LMS
+	const l = 0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb;
+	const m = 0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb;
+	const s = 0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb;
+
+	// Convert to Oklab
+	const l_ = Math.cbrt(l);
+	const m_ = Math.cbrt(m);
+	const s_ = Math.cbrt(s);
+
+	return {
+		L: 0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_,
+		a: 1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_,
+		b: 0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_,
+	};
+}
+
+/**
+ * Convert Oklab to RGB (0-255).
+ */
+function oklabToRgb(L: number, a: number, b: number): { r: number; g: number; b: number } {
+	// Convert to LMS
+	const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+	const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+	const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+
+	const l = l_ * l_ * l_;
+	const m = m_ * m_ * m_;
+	const s = s_ * s_ * s_;
+
+	// Convert to linear sRGB
+	const lr = +4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+	const lg = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+	const lb = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+
+	// Convert to sRGB and then to 0-255
+	return {
+		r: Math.round(linearToSrgb(lr) * 255),
+		g: Math.round(linearToSrgb(lg) * 255),
+		b: Math.round(linearToSrgb(lb) * 255),
+	};
+}
+
+/**
+ * Interpolate between two colors in Oklab color space.
+ * @param color1 - Starting color (hex)
+ * @param color2 - Ending color (hex)
+ * @param t - Interpolation factor (0-1)
+ * @returns Interpolated color as hex string
+ */
+export function interpolateColor(color1: string, color2: string, t: number): string {
+	const rgb1 = hexToRgb(color1);
+	const rgb2 = hexToRgb(color2);
+
+	const lab1 = rgbToOklab(rgb1.r, rgb1.g, rgb1.b);
+	const lab2 = rgbToOklab(rgb2.r, rgb2.g, rgb2.b);
+
+	// Linear interpolation in Oklab space
+	const L = lab1.L + (lab2.L - lab1.L) * t;
+	const a = lab1.a + (lab2.a - lab1.a) * t;
+	const b = lab1.b + (lab2.b - lab1.b) * t;
+
+	const rgb = oklabToRgb(L, a, b);
+	return rgbToHex(rgb.r, rgb.g, rgb.b);
+}
 
 /**
  * Calculate intensity (0-1) for a numeric value.
@@ -126,19 +212,8 @@ export function calculateIntensityBoolean(value: boolean): number {
 }
 
 /**
- * Map intensity (0-1) to a discrete level (0-4).
- * Level 0 is for zero values, levels 1-4 are intensity tiers.
- */
-export function intensityToLevel(intensity: number): 0 | 1 | 2 | 3 | 4 {
-	if (intensity <= 0) return 0;
-	if (intensity <= 0.25) return 1;
-	if (intensity <= 0.5) return 2;
-	if (intensity <= 0.75) return 3;
-	return 4;
-}
-
-/**
  * Get the color for a given intensity and scheme.
+ * Interpolates smoothly between zero and max colors based on intensity.
  */
 export function getColorForIntensity(
 	intensity: number,
@@ -146,15 +221,14 @@ export function getColorForIntensity(
 	isDark: boolean
 ): string {
 	const colors = isDark ? COLOR_SCHEMES[scheme].dark : COLOR_SCHEMES[scheme].light;
-	const level = intensityToLevel(intensity);
 
-	switch (level) {
-		case 0: return colors.zero;
-		case 1: return colors.l1;
-		case 2: return colors.l2;
-		case 3: return colors.l3;
-		case 4: return colors.l4;
+	if (intensity <= 0) {
+		return colors.zero;
 	}
+
+	// Clamp intensity to [0, 1]
+	const t = Math.max(0, Math.min(1, intensity));
+	return interpolateColor(colors.zero, colors.max, t);
 }
 
 /**
@@ -172,9 +246,6 @@ export function getColorSchemeCSSVars(scheme: ColorScheme, isDark: boolean): str
 
 	return `
 		--heatmap-color-zero: ${colors.zero};
-		--heatmap-color-l1: ${colors.l1};
-		--heatmap-color-l2: ${colors.l2};
-		--heatmap-color-l3: ${colors.l3};
-		--heatmap-color-l4: ${colors.l4};
+		--heatmap-color-max: ${colors.max};
 	`;
 }

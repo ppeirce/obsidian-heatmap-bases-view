@@ -204,8 +204,8 @@ export function processData(
 			hasNumeric = true;
 		}
 
-		// Update stats for non-null, positive values
-		if (value !== null && value > 0) {
+		// Update stats for non-null values (including 0)
+		if (value !== null) {
 			min = Math.min(min, value);
 			max = Math.max(max, value);
 			count++;
