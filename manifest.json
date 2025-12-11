@@ -1,10 +1,10 @@
 {
 	"id": "heatmap-bases-view",
 	"name": "Heatmap Bases View",
-	"version": "1.0.0",
+	"version": "1.0.3",
 	"minAppVersion": "1.10.0",
 	"description": "A GitHub-contributions-style heatmap view for Obsidian Bases. Visualize boolean or numeric properties from daily notes over time.",
-	"author": "Your Name",
-	"authorUrl": "https://github.com/yourusername",
+	"author": "Peter Peirce",
+	"authorUrl": "https://github.com/ppeirce",
 	"isDesktopOnly": false
 }

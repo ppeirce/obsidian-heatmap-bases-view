@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-heatmap-bases-view",
-	"version": "1.0.0",
+	"version": "1.0.3",
 	"description": "A GitHub-contributions-style heatmap view for Obsidian Bases",
 	"main": "main.js",
 	"scripts": {

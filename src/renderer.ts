@@ -11,7 +11,6 @@ import {
 	calculateIntensityNumeric,
 	calculateIntensityBoolean,
 	getColorForIntensity,
-	COLOR_SCHEMES,
 	isDarkMode,
 } from './colorUtils';
 
@@ -144,43 +143,6 @@ function createWeekdayLabels(weekStart: 0 | 1): HTMLElement {
 }
 
 /**
- * Create the legend component.
- * Shows a smooth gradient from zero to max intensity.
- */
-function createLegend(colorScheme: ColorScheme): HTMLElement {
-	const legend = document.createElement('div');
-	legend.className = 'heatmap-legend';
-
-	const lessLabel = document.createElement('span');
-	lessLabel.className = 'heatmap-legend-label';
-	lessLabel.textContent = 'Less';
-	legend.appendChild(lessLabel);
-
-	const cellsContainer = document.createElement('div');
-	cellsContainer.className = 'heatmap-legend-cells';
-
-	const dark = isDarkMode();
-
-	// Create 5 legend cells showing smooth gradient (0%, 25%, 50%, 75%, 100%)
-	const intensities = [0, 0.25, 0.5, 0.75, 1];
-	for (const intensity of intensities) {
-		const cell = document.createElement('div');
-		cell.className = 'heatmap-legend-cell';
-		cell.style.backgroundColor = getColorForIntensity(intensity, colorScheme, dark);
-		cellsContainer.appendChild(cell);
-	}
-
-	legend.appendChild(cellsContainer);
-
-	const moreLabel = document.createElement('span');
-	moreLabel.className = 'heatmap-legend-label';
-	moreLabel.textContent = 'More';
-	legend.appendChild(moreLabel);
-
-	return legend;
-}
-
-/**
  * Create an empty state message.
  */
 export function createEmptyState(message: string, description: string): HTMLElement {
@@ -293,9 +255,6 @@ export function renderHeatmap(
 	innerWrapper.appendChild(grid);
 	scrollWrapper.appendChild(innerWrapper);
 	container.appendChild(scrollWrapper);
-
-	// Add legend
-	container.appendChild(createLegend(colorScheme));
 
 	return container;
 }
