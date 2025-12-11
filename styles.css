@@ -11,7 +11,7 @@
 }
 
 /* Container */
-.heatmap-view {
+.heatmap-view-container {
 	padding: var(--size-4-2);
 	overflow: hidden;
 }

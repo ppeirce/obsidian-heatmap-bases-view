@@ -236,11 +236,93 @@ this.registerInterval(window.setInterval(() => { /* ... */ }, 1000));
 
 ## Troubleshooting
 
-- Plugin doesn't load after build: ensure `main.js` and `manifest.json` are at the top level of the plugin folder under `<Vault>/.obsidian/plugins/<plugin-id>/`. 
+- Plugin doesn't load after build: ensure `main.js` and `manifest.json` are at the top level of the plugin folder under `<Vault>/.obsidian/plugins/<plugin-id>/`.
 - Build issues: if `main.js` is missing, run `npm run build` or `npm run dev` to compile your TypeScript source code.
 - Commands not appearing: verify `addCommand` runs after `onload` and IDs are unique.
 - Settings not persisting: ensure `loadData`/`saveData` are awaited and you re-render the UI after changes.
 - Mobile-only issues: confirm you're not using desktop-only APIs; check `isDesktopOnly` and adjust.
+
+## BasesView implementation (CRITICAL)
+
+When implementing a custom `BasesView`, you **MUST** follow this exact pattern. Deviating from it causes subtle bugs where the view fails to load when set as the default view.
+
+### The correct pattern
+
+```ts
+export class MyBasesView extends BasesView {
+  readonly type = 'my-view';  // Use readonly
+  private containerEl: HTMLElement;
+
+  constructor(controller: QueryController, parentEl: HTMLElement) {
+    super(controller);
+    // CRITICAL: Create a child div, do NOT use parentEl directly
+    this.containerEl = parentEl.createDiv('my-view-container');
+  }
+
+  onDataUpdated(): void {
+    this.render();
+  }
+
+  private render(): void {
+    this.containerEl.empty();
+    // ... render your view into this.containerEl
+  }
+}
+```
+
+### Critical requirements
+
+1. **Create a child container**: In the constructor, call `parentEl.createDiv('class-name')` to create your own container element. Do NOT store `parentEl` directly as your container.
+
+2. **Do NOT override `onload()`**: The base class `onload()` sets up the subscription to data updates. If you override it without calling `super.onload()`, `onDataUpdated()` will never be called when the view is the default view.
+
+3. **Use `readonly type`**: Declare the type property as `readonly`.
+
+4. **All rendering in `onDataUpdated()`**: This is the only lifecycle hook you need. It's called both for initial render and subsequent data changes.
+
+### What goes wrong if you deviate
+
+**Bug symptoms:**
+- View works when switching to it from another view
+- View fails to load (shows empty/0 results) when set as the default view
+- UI freezes and you cannot switch views
+- Console error: `Cannot read properties of null (reading 'views')`
+
+**Root cause investigation showed:**
+- When using `containerEl` directly (instead of creating a child div), the view fails silently when it's the default
+- `onDataUpdated()` is never called in the default view case
+- The Bases framework expects views to create their own child container
+
+**Debugging output that revealed the issue:**
+```
+// When heatmap is the DEFAULT view (broken):
+[HeatmapView] constructor called {hasController: true, hasContainerEl: true}
+// onDataUpdated is NEVER called
+
+// When switching TO heatmap (works):
+[HeatmapView] constructor called {hasController: true, hasContainerEl: true}
+[HeatmapView] onDataUpdated called {hasData: true, dataLength: 820, hasConfig: true}
+```
+
+### The fix
+
+Changed from:
+```ts
+constructor(controller: QueryController, containerEl: HTMLElement) {
+  super(controller);
+  this.containerEl = containerEl;  // WRONG: using parent directly
+}
+```
+
+To:
+```ts
+constructor(controller: QueryController, parentEl: HTMLElement) {
+  super(controller);
+  this.containerEl = parentEl.createDiv('heatmap-view-container');  // CORRECT: create child
+}
+```
+
+This single change fixed the bug where the view wouldn't load as the default view.
 
 ## References
 

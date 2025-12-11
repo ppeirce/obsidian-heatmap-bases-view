@@ -13,7 +13,7 @@ import { calculateDateRange } from './dateUtils';
  * Heatmap view implementation for Obsidian Bases.
  */
 export class HeatmapView extends BasesView {
-	type = 'heatmap';
+	readonly type = 'heatmap';
 
 	private containerEl: HTMLElement;
 	private cleanupInteractions: (() => void) | null = null;
@@ -21,11 +21,12 @@ export class HeatmapView extends BasesView {
 
 	constructor(
 		controller: QueryController,
-		containerEl: HTMLElement
+		parentEl: HTMLElement
 	) {
 		super(controller);
-		this.containerEl = containerEl;
+		this.containerEl = parentEl.createDiv('heatmap-view-container');
 	}
+
 
 	/**
 	 * Get the current view configuration with defaults.
@@ -64,7 +65,6 @@ export class HeatmapView extends BasesView {
 
 		// Clear container
 		this.containerEl.empty();
-		this.containerEl.addClass('heatmap-view');
 
 		const viewConfig = this.getConfig();
 
@@ -80,7 +80,14 @@ export class HeatmapView extends BasesView {
 
 		// Get entries from query data
 		const queryData = this.data;
-		const entries: BasesEntry[] = queryData?.data || [];
+
+		// If data hasn't loaded yet, don't render anything.
+		// onDataUpdated() will be called again when data is ready.
+		if (!queryData) {
+			return;
+		}
+
+		const entries: BasesEntry[] = queryData.data || [];
 
 		if (entries.length === 0) {
 			const emptyState = createEmptyState(
