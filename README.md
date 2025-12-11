@@ -1,94 +1,151 @@
-# Obsidian Sample Plugin
+# Heatmap Bases View
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+A GitHub-contributions-style heatmap view for [Obsidian Bases](https://help.obsidian.md/bases). Visualize boolean or numeric properties from your daily notes over time.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+**Requires Obsidian 1.10.0 or later** (Bases feature)
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+## Features
 
-## First time developing plugins?
+- Calendar heatmap visualization of note properties
+- Support for boolean (checkbox) and numeric properties
+- Parse dates from filenames (daily notes) or date properties
+- 5 color schemes: Green, Purple, Blue, Orange, Gray
+- Light and dark theme support
+- Configurable date ranges
+- Click cells to open corresponding notes
+- Keyboard navigation support
 
-Quick starting guide for new plugin devs:
+## Installation
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+### Manual Installation
 
-## Releasing new releases
+1. Build the plugin (or download release files):
+   ```bash
+   npm install
+   npm run build
+   ```
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+2. Create a folder for the plugin in your vault:
+   ```
+   <YourVault>/.obsidian/plugins/heatmap-bases-view/
+   ```
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+3. Copy these files to the plugin folder:
+   - `main.js`
+   - `styles.css`
+   - `manifest.json`
 
-## Adding your plugin to the community plugin list
+4. Reload Obsidian (Ctrl/Cmd + R)
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+5. Enable the plugin in Settings > Community Plugins
 
-## How to use
+## Usage
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+### Setting Up a Base with Heatmap View
 
-## Manually installing the plugin
+1. **Create some daily notes** with a boolean or numeric property. For example, create notes named `2025-01-01.md`, `2025-01-02.md`, etc. with frontmatter:
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+   ```yaml
+   ---
+   exercise: true
+   ---
+   ```
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint ./src/`
+   Or with numeric values:
 
-## Funding URL
+   ```yaml
+   ---
+   mood: 7
+   ---
+   ```
 
-You can include funding URLs where people who use your plugin can financially support it.
+2. **Create a new Base**:
+   - Open the command palette (Ctrl/Cmd + P)
+   - Search for "Create new base"
+   - Give it a name like "Exercise Tracker"
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+3. **Configure the Base source**:
+   - In the Base, click the filter icon or settings
+   - Set the source folder to where your daily notes are stored (e.g., `Daily Notes/`)
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+4. **Switch to Heatmap view**:
+   - Click the view switcher (usually shows "Table" by default)
+   - Select "Heatmap" from the dropdown
+
+5. **Configure the Heatmap**:
+   - Click the settings/options for the view
+   - **Date property**: Leave empty to parse dates from filenames, or select a date property
+   - **Value property**: Select the property to visualize (e.g., `exercise` or `mood`)
+   - Optionally configure color scheme, date range, and label visibility
+
+### Example: Habit Tracker
+
+Create daily notes with this frontmatter structure:
+
+```yaml
+---
+meditated: true
+exercise: false
+water_glasses: 8
+mood: 7
+---
 ```
 
-If you have multiple URLs, you can also do:
+Then create separate Bases for each habit:
+- "Meditation Tracker" → Value property: `meditated`
+- "Exercise Tracker" → Value property: `exercise`
+- "Hydration" → Value property: `water_glasses`
+- "Mood" → Value property: `mood`
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
+### Example: Using a Date Property
+
+If your notes aren't named with dates, you can use a date property instead:
+
+```yaml
+---
+date: 2025-01-15
+completed: true
+---
 ```
 
-## API Documentation
+In the Heatmap settings:
+- **Date property**: Select `date`
+- **Value property**: Select `completed`
 
-See https://github.com/obsidianmd/obsidian-api
+## Configuration Options
+
+| Option | Description |
+|--------|-------------|
+| Date property | Property containing the date, or leave empty to parse from filename |
+| Value property | Boolean or number property to visualize |
+| Start date | Beginning of date range (YYYY-MM-DD), or leave empty for auto |
+| End date | End of date range (YYYY-MM-DD), or leave empty for today |
+| Color scheme | Green, Purple, Blue, Orange, or Gray |
+| Week starts on | Sunday or Monday |
+| Show weekday labels | Toggle Mon/Wed/Fri labels |
+| Show month labels | Toggle month labels at top |
+
+## Color Interpretation
+
+- **Empty (hollow)**: No note exists for this date
+- **Dim filled**: Note exists but value is false/0/missing
+- **Colored intensity**: Note exists with positive value
+  - For booleans: full intensity when true
+  - For numbers: intensity scaled between min and max values
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Development build with watch mode
+npm run dev
+
+# Production build
+npm run build
+```
+
+## License
+
+MIT

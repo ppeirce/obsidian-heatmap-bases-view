@@ -1,8 +1,320 @@
-/*
+/* Heatmap Bases View Styles */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+/* CSS Custom Properties */
+.heatmap-container {
+	--cell-size: 11px;
+	--cell-gap: 3px;
+	--cell-radius: 2px;
+	--label-font-size: 10px;
+	--label-color: var(--text-muted);
+	--weekday-label-width: 28px;
+}
 
-If your plugin does not need CSS, delete this file.
+/* Container */
+.heatmap-view {
+	padding: var(--size-4-2);
+	overflow: hidden;
+}
 
-*/
+.heatmap-container {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+}
+
+/* Scroll wrapper for horizontal overflow */
+.heatmap-scroll-wrapper {
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding-bottom: var(--size-4-2);
+}
+
+/* Inner wrapper keeps month labels aligned with grid */
+.heatmap-inner-wrapper {
+	display: inline-block;
+}
+
+.heatmap-inner-wrapper--with-labels .heatmap-month-labels {
+	/* Add left padding to account for weekday labels column */
+	padding-left: calc(var(--weekday-label-width) + var(--size-4-2));
+}
+
+/* Month labels row - uses CSS grid matching the cells */
+.heatmap-month-labels {
+	display: grid;
+	grid-template-columns: repeat(var(--total-weeks, 53), calc(var(--cell-size) + var(--cell-gap)));
+	height: 16px;
+	margin-bottom: var(--size-4-1);
+	font-size: var(--label-font-size);
+	color: var(--label-color);
+}
+
+.heatmap-month-label {
+	text-align: left;
+	white-space: nowrap;
+	overflow: visible;
+}
+
+/* Main grid container */
+.heatmap-grid {
+	display: flex;
+	gap: var(--size-4-2);
+}
+
+/* Weekday labels column */
+.heatmap-weekday-labels {
+	display: flex;
+	flex-direction: column;
+	width: var(--weekday-label-width);
+	flex-shrink: 0;
+	font-size: var(--label-font-size);
+	color: var(--label-color);
+	gap: var(--cell-gap);
+}
+
+.heatmap-weekday-label {
+	height: var(--cell-size);
+	line-height: var(--cell-size);
+	text-align: right;
+	padding-right: var(--size-4-1);
+}
+
+/* Cells grid - CSS Grid layout */
+.heatmap-cells {
+	display: grid;
+	grid-template-rows: repeat(7, var(--cell-size));
+	grid-auto-columns: var(--cell-size);
+	grid-auto-flow: column;
+	gap: var(--cell-gap);
+}
+
+/* Individual cell */
+.heatmap-cell {
+	width: var(--cell-size);
+	height: var(--cell-size);
+	border-radius: var(--cell-radius);
+	cursor: pointer;
+	transition: transform 0.1s ease, outline 0.1s ease;
+	outline: 1px solid transparent;
+}
+
+.heatmap-cell:hover {
+	transform: scale(1.2);
+	outline: 1px solid var(--text-muted);
+}
+
+.heatmap-cell:focus {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 1px;
+	transform: scale(1.1);
+}
+
+.heatmap-cell:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+}
+
+/* Empty cell - no note for this date */
+.heatmap-cell--empty {
+	background-color: var(--background-secondary);
+	cursor: default;
+}
+
+.heatmap-cell--empty:hover {
+	transform: none;
+	outline-color: transparent;
+}
+
+/* Zero cell - note exists but value is 0/false */
+.heatmap-cell--zero {
+	background-color: var(--heatmap-color-zero, var(--background-modifier-border));
+}
+
+/* Filled cell - note exists with positive value */
+.heatmap-cell--filled {
+	/* Color set by level classes */
+}
+
+/* Color scheme: Green (GitHub-style) - Dark mode */
+.heatmap--dark.heatmap--green {
+	--heatmap-color-zero: #161b22;
+	--heatmap-color-l1: #0e4429;
+	--heatmap-color-l2: #006d32;
+	--heatmap-color-l3: #26a641;
+	--heatmap-color-l4: #39d353;
+}
+
+/* Color scheme: Green (GitHub-style) - Light mode */
+.heatmap--light.heatmap--green {
+	--heatmap-color-zero: #ebedf0;
+	--heatmap-color-l1: #9be9a8;
+	--heatmap-color-l2: #40c463;
+	--heatmap-color-l3: #30a14e;
+	--heatmap-color-l4: #216e39;
+}
+
+/* Color scheme: Purple - Dark mode */
+.heatmap--dark.heatmap--purple {
+	--heatmap-color-zero: #1a1523;
+	--heatmap-color-l1: #3b1d71;
+	--heatmap-color-l2: #5b21b6;
+	--heatmap-color-l3: #7c3aed;
+	--heatmap-color-l4: #a78bfa;
+}
+
+/* Color scheme: Purple - Light mode */
+.heatmap--light.heatmap--purple {
+	--heatmap-color-zero: #ebedf0;
+	--heatmap-color-l1: #d8b4fe;
+	--heatmap-color-l2: #a78bfa;
+	--heatmap-color-l3: #7c3aed;
+	--heatmap-color-l4: #5b21b6;
+}
+
+/* Color scheme: Blue - Dark mode */
+.heatmap--dark.heatmap--blue {
+	--heatmap-color-zero: #161b22;
+	--heatmap-color-l1: #0c4a6e;
+	--heatmap-color-l2: #0369a1;
+	--heatmap-color-l3: #0ea5e9;
+	--heatmap-color-l4: #38bdf8;
+}
+
+/* Color scheme: Blue - Light mode */
+.heatmap--light.heatmap--blue {
+	--heatmap-color-zero: #ebedf0;
+	--heatmap-color-l1: #bae6fd;
+	--heatmap-color-l2: #7dd3fc;
+	--heatmap-color-l3: #38bdf8;
+	--heatmap-color-l4: #0284c7;
+}
+
+/* Color scheme: Orange - Dark mode */
+.heatmap--dark.heatmap--orange {
+	--heatmap-color-zero: #1c1917;
+	--heatmap-color-l1: #7c2d12;
+	--heatmap-color-l2: #c2410c;
+	--heatmap-color-l3: #ea580c;
+	--heatmap-color-l4: #fb923c;
+}
+
+/* Color scheme: Orange - Light mode */
+.heatmap--light.heatmap--orange {
+	--heatmap-color-zero: #ebedf0;
+	--heatmap-color-l1: #fed7aa;
+	--heatmap-color-l2: #fdba74;
+	--heatmap-color-l3: #fb923c;
+	--heatmap-color-l4: #ea580c;
+}
+
+/* Color scheme: Gray - Dark mode */
+.heatmap--dark.heatmap--gray {
+	--heatmap-color-zero: #161b22;
+	--heatmap-color-l1: #2d333b;
+	--heatmap-color-l2: #444c56;
+	--heatmap-color-l3: #768390;
+	--heatmap-color-l4: #adbac7;
+}
+
+/* Color scheme: Gray - Light mode */
+.heatmap--light.heatmap--gray {
+	--heatmap-color-zero: #ebedf0;
+	--heatmap-color-l1: #c6d0da;
+	--heatmap-color-l2: #9ba6b0;
+	--heatmap-color-l3: #6e7681;
+	--heatmap-color-l4: #444c56;
+}
+
+/* Apply colors to intensity levels */
+.heatmap-cell--level-0,
+.heatmap-cell--zero {
+	background-color: var(--heatmap-color-zero);
+}
+
+.heatmap-cell--level-1 {
+	background-color: var(--heatmap-color-l1);
+}
+
+.heatmap-cell--level-2 {
+	background-color: var(--heatmap-color-l2);
+}
+
+.heatmap-cell--level-3 {
+	background-color: var(--heatmap-color-l3);
+}
+
+.heatmap-cell--level-4 {
+	background-color: var(--heatmap-color-l4);
+}
+
+/* Legend */
+.heatmap-legend {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	font-size: var(--label-font-size);
+	color: var(--label-color);
+}
+
+.heatmap-legend-label {
+	/* Default styling */
+}
+
+.heatmap-legend-cells {
+	display: flex;
+	gap: 2px;
+}
+
+.heatmap-legend-cell {
+	width: var(--cell-size);
+	height: var(--cell-size);
+	border-radius: var(--cell-radius);
+}
+
+/* Empty state */
+.heatmap-empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: var(--size-4-8);
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.heatmap-empty-state-icon {
+	font-size: 32px;
+	margin-bottom: var(--size-4-2);
+	opacity: 0.5;
+}
+
+.heatmap-empty-state-title {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	margin-bottom: var(--size-4-1);
+	color: var(--text-normal);
+}
+
+.heatmap-empty-state-description {
+	font-size: var(--font-ui-small);
+	max-width: 300px;
+	line-height: 1.4;
+}
+
+/* Scrollbar styling */
+.heatmap-scroll-wrapper::-webkit-scrollbar {
+	height: 8px;
+}
+
+.heatmap-scroll-wrapper::-webkit-scrollbar-track {
+	background: var(--background-secondary);
+	border-radius: 4px;
+}
+
+.heatmap-scroll-wrapper::-webkit-scrollbar-thumb {
+	background: var(--background-modifier-border);
+	border-radius: 4px;
+}
+
+.heatmap-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+	background: var(--background-modifier-border-hover);
+}

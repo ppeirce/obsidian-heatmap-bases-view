@@ -1,0 +1,288 @@
+import { HeatmapEntry, ProcessedData, ColorScheme, CellState, MonthLabel, DateRange } from './types';
+import {
+	generateDateRange,
+	getDayOfWeek,
+	getWeekNumber,
+	generateMonthLabels,
+	getWeekdayLabels,
+} from './dateUtils';
+import {
+	calculateIntensityNumeric,
+	calculateIntensityBoolean,
+	intensityToLevel,
+	COLOR_SCHEMES,
+	isDarkMode,
+} from './colorUtils';
+
+export interface RenderOptions {
+	colorScheme: ColorScheme;
+	weekStart: 0 | 1;
+	showWeekdayLabels: boolean;
+	showMonthLabels: boolean;
+}
+
+/**
+ * Build the cell state for a given date.
+ */
+function getCellState(
+	date: string,
+	entries: Map<string, HeatmapEntry>,
+	stats: ProcessedData['stats']
+): CellState {
+	const entry = entries.get(date);
+
+	if (!entry) {
+		return { type: 'empty' };
+	}
+
+	if (entry.value === null || entry.value === 0) {
+		return { type: 'zero', note: entry.note };
+	}
+
+	// Calculate intensity
+	let intensity: number;
+	if (stats.hasNumeric) {
+		intensity = calculateIntensityNumeric(entry.value, stats.min, stats.max);
+	} else {
+		// Boolean mode
+		intensity = calculateIntensityBoolean(entry.value > 0);
+	}
+
+	return { type: 'filled', note: entry.note, intensity };
+}
+
+/**
+ * Create a cell element for the heatmap grid.
+ */
+function createCellElement(
+	date: string,
+	state: CellState,
+	row: number,
+	column: number,
+	entry: HeatmapEntry | undefined
+): HTMLElement {
+	const cell = document.createElement('div');
+	cell.className = 'heatmap-cell';
+	cell.dataset.date = date;
+	cell.style.gridRow = String(row);
+	cell.style.gridColumn = String(column);
+
+	if (state.type === 'empty') {
+		cell.classList.add('heatmap-cell--empty');
+	} else if (state.type === 'zero') {
+		cell.classList.add('heatmap-cell--zero');
+		cell.dataset.notePath = state.note.path;
+	} else if (state.type === 'filled') {
+		cell.classList.add('heatmap-cell--filled');
+		cell.dataset.notePath = state.note.path;
+		cell.dataset.intensity = String(state.intensity);
+
+		const level = intensityToLevel(state.intensity);
+		cell.classList.add(`heatmap-cell--level-${level}`);
+	}
+
+	// Store display value for tooltip
+	if (entry) {
+		cell.dataset.displayValue = entry.displayValue;
+	}
+
+	return cell;
+}
+
+/**
+ * Create the month labels row.
+ * Uses CSS grid to align labels with the cells below.
+ */
+function createMonthLabelsRow(
+	monthLabels: MonthLabel[],
+	totalWeeks: number
+): HTMLElement {
+	const row = document.createElement('div');
+	row.className = 'heatmap-month-labels';
+
+	// Set the number of columns to match the cells grid
+	row.style.setProperty('--total-weeks', String(totalWeeks));
+
+	for (const label of monthLabels) {
+		const span = document.createElement('span');
+		span.className = 'heatmap-month-label';
+		span.textContent = label.name;
+		span.style.gridColumnStart = String(label.startColumn);
+		span.style.gridColumnEnd = String(label.endColumn);
+		row.appendChild(span);
+	}
+
+	return row;
+}
+
+/**
+ * Create the weekday labels column.
+ */
+function createWeekdayLabels(weekStart: 0 | 1): HTMLElement {
+	const container = document.createElement('div');
+	container.className = 'heatmap-weekday-labels';
+
+	const labels = getWeekdayLabels(weekStart);
+
+	// Only show Mon, Wed, Fri (or corresponding for Sunday start)
+	const indices = weekStart === 1 ? [0, 2, 4] : [1, 3, 5];
+
+	for (let i = 0; i < 7; i++) {
+		const span = document.createElement('span');
+		span.className = 'heatmap-weekday-label';
+		if (indices.includes(i)) {
+			span.textContent = labels[i];
+		}
+		container.appendChild(span);
+	}
+
+	return container;
+}
+
+/**
+ * Create the legend component.
+ */
+function createLegend(colorScheme: ColorScheme): HTMLElement {
+	const legend = document.createElement('div');
+	legend.className = 'heatmap-legend';
+
+	const lessLabel = document.createElement('span');
+	lessLabel.className = 'heatmap-legend-label';
+	lessLabel.textContent = 'Less';
+	legend.appendChild(lessLabel);
+
+	const cellsContainer = document.createElement('div');
+	cellsContainer.className = 'heatmap-legend-cells';
+
+	// Create 5 legend cells (level 0-4)
+	for (let i = 0; i <= 4; i++) {
+		const cell = document.createElement('div');
+		cell.className = `heatmap-legend-cell heatmap-cell--level-${i}`;
+		cellsContainer.appendChild(cell);
+	}
+
+	legend.appendChild(cellsContainer);
+
+	const moreLabel = document.createElement('span');
+	moreLabel.className = 'heatmap-legend-label';
+	moreLabel.textContent = 'More';
+	legend.appendChild(moreLabel);
+
+	return legend;
+}
+
+/**
+ * Create an empty state message.
+ */
+export function createEmptyState(message: string, description: string): HTMLElement {
+	const container = document.createElement('div');
+	container.className = 'heatmap-empty-state';
+
+	const icon = document.createElement('div');
+	icon.className = 'heatmap-empty-state-icon';
+	icon.textContent = '\u26A0'; // Warning symbol
+	container.appendChild(icon);
+
+	const title = document.createElement('div');
+	title.className = 'heatmap-empty-state-title';
+	title.textContent = message;
+	container.appendChild(title);
+
+	const desc = document.createElement('div');
+	desc.className = 'heatmap-empty-state-description';
+	desc.textContent = description;
+	container.appendChild(desc);
+
+	return container;
+}
+
+/**
+ * Render the complete heatmap DOM structure.
+ */
+export function renderHeatmap(
+	data: ProcessedData,
+	dateRange: DateRange,
+	options: RenderOptions
+): HTMLElement {
+	const { entries, stats } = data;
+	const { colorScheme, weekStart, showWeekdayLabels, showMonthLabels } = options;
+
+	// Generate all dates in range
+	const allDates = generateDateRange(dateRange.start, dateRange.end);
+
+	// Generate month labels
+	const monthLabels = generateMonthLabels(dateRange.start, dateRange.end, weekStart);
+
+	// Calculate total number of weeks for grid sizing
+	const totalWeeks = getWeekNumber(dateRange.end, dateRange.start, weekStart);
+
+	// Create main container
+	const container = document.createElement('div');
+	container.className = `heatmap-container heatmap--${colorScheme}`;
+
+	// Apply theme class
+	if (isDarkMode()) {
+		container.classList.add('heatmap--dark');
+	} else {
+		container.classList.add('heatmap--light');
+	}
+
+	// Create scroll wrapper
+	const scrollWrapper = document.createElement('div');
+	scrollWrapper.className = 'heatmap-scroll-wrapper';
+
+	// Create inner wrapper that holds month labels and grid together
+	const innerWrapper = document.createElement('div');
+	innerWrapper.className = 'heatmap-inner-wrapper';
+	if (showWeekdayLabels) {
+		innerWrapper.classList.add('heatmap-inner-wrapper--with-labels');
+	}
+
+	// Add month labels if enabled
+	if (showMonthLabels) {
+		innerWrapper.appendChild(createMonthLabelsRow(monthLabels, totalWeeks));
+	}
+
+	// Create grid container
+	const grid = document.createElement('div');
+	grid.className = 'heatmap-grid';
+
+	// Add weekday labels if enabled
+	if (showWeekdayLabels) {
+		grid.appendChild(createWeekdayLabels(weekStart));
+	}
+
+	// Create cells container
+	const cellsContainer = document.createElement('div');
+	cellsContainer.className = 'heatmap-cells';
+
+	// Create cells for each date
+	for (const dateStr of allDates) {
+		const date = new Date(dateStr);
+		const dayOfWeek = getDayOfWeek(date, weekStart);
+		const weekNum = getWeekNumber(date, dateRange.start, weekStart);
+
+		const state = getCellState(dateStr, entries, stats);
+		const entry = entries.get(dateStr);
+
+		const cell = createCellElement(
+			dateStr,
+			state,
+			dayOfWeek + 1, // 1-indexed for CSS grid
+			weekNum,
+			entry
+		);
+
+		cellsContainer.appendChild(cell);
+	}
+
+	grid.appendChild(cellsContainer);
+	innerWrapper.appendChild(grid);
+	scrollWrapper.appendChild(innerWrapper);
+	container.appendChild(scrollWrapper);
+
+	// Add legend
+	container.appendChild(createLegend(colorScheme));
+
+	return container;
+}
