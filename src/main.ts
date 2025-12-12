@@ -8,7 +8,7 @@ import { HeatmapView } from './HeatmapView';
  * Visualizes boolean or numeric properties from daily notes over time.
  */
 export default class HeatmapPlugin extends Plugin {
-	async onload() {
+	onload() {
 		this.registerBasesView('heatmap', {
 			name: 'Heatmap',
 			icon: 'calendar-heat',

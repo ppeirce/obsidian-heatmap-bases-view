@@ -20,14 +20,14 @@ export function setupInteractions(options: InteractionHandlerOptions): () => voi
 	// Handle cell clicks
 	const clickHandler = (event: MouseEvent) => {
 		const target = event.target as HTMLElement;
-		const cell = target.closest('.heatmap-cell') as HTMLElement | null;
+		const cell = target.closest('.heatmap-cell');
 
-		if (!cell) return;
+		if (!(cell instanceof HTMLElement)) return;
 
 		const notePath = cell.dataset.notePath;
 		if (notePath) {
 			// Open the note
-			app.workspace.openLinkText(notePath, '', false);
+			void app.workspace.openLinkText(notePath, '', false);
 		}
 	};
 
@@ -37,9 +37,9 @@ export function setupInteractions(options: InteractionHandlerOptions): () => voi
 	// Handle hover for tooltips
 	const mouseoverHandler = (event: MouseEvent) => {
 		const target = event.target as HTMLElement;
-		const cell = target.closest('.heatmap-cell') as HTMLElement | null;
+		const cell = target.closest('.heatmap-cell');
 
-		if (!cell) return;
+		if (!(cell instanceof HTMLElement)) return;
 
 		const dateStr = cell.dataset.date;
 		if (!dateStr) return;
@@ -54,9 +54,9 @@ export function setupInteractions(options: InteractionHandlerOptions): () => voi
 	// Handle keyboard navigation
 	const keydownHandler = (event: KeyboardEvent) => {
 		const target = event.target as HTMLElement;
-		const cell = target.closest('.heatmap-cell') as HTMLElement | null;
+		const cell = target.closest('.heatmap-cell');
 
-		if (!cell) return;
+		if (!(cell instanceof HTMLElement)) return;
 
 		const dateStr = cell.dataset.date;
 		if (!dateStr) return;
@@ -65,7 +65,7 @@ export function setupInteractions(options: InteractionHandlerOptions): () => voi
 		if (event.key === 'Enter') {
 			const notePath = cell.dataset.notePath;
 			if (notePath) {
-				app.workspace.openLinkText(notePath, '', false);
+				void app.workspace.openLinkText(notePath, '', false);
 			}
 		}
 
@@ -173,9 +173,9 @@ function navigateToAdjacentCell(
 	const targetDateStr = formatDateISO(targetDate);
 	const targetCell = containerEl.querySelector(
 		`.heatmap-cell[data-date="${targetDateStr}"]`
-	) as HTMLElement | null;
+	);
 
-	if (targetCell) {
+	if (targetCell instanceof HTMLElement) {
 		targetCell.focus();
 	}
 }

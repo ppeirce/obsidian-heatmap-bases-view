@@ -4,7 +4,7 @@ import globals from "globals";
 
 export default tseslint.config(
 	eslint.configs.recommended,
-	...tseslint.configs.recommended,
+	...tseslint.configs.recommendedTypeChecked,
 	{
 		files: ["src/**/*.ts"],
 		languageOptions: {
@@ -12,6 +12,7 @@ export default tseslint.config(
 				...globals.node,
 			},
 			parserOptions: {
+				project: true,
 				sourceType: "module",
 			},
 		},
