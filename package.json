@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-heatmap-bases-view",
-	"version": "1.0.3",
-	"description": "A GitHub-contributions-style heatmap view for Obsidian Bases",
+	"version": "1.0.4",
+	"description": "A GitHub-contributions-style heatmap view for Bases",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
