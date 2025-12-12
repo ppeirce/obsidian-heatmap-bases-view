@@ -156,3 +156,7 @@ npm run lint:fix
 
 Linting runs automatically on staged files before each commit via husky pre-commit hooks.
 
+### Releasing
+
+See [RELEASING.md](RELEASING.md) for the complete release process and version management.
+

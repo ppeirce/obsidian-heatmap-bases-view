@@ -78,6 +78,10 @@ npm run build
 - Keep `minAppVersion` accurate when using newer APIs.
 - Canonical requirements are coded here: https://github.com/obsidianmd/obsidian-releases/blob/master/.github/workflows/validate-plugin-entry.yml
 
+## README maintenance
+
+After adding new features, removing deprecated old features, fixing known bugs, etc., update the README.md to reflect the new state of the plugin.
+
 ## Testing
 
 - Manual install for testing: copy `main.js`, `manifest.json`, `styles.css` (if any) to:
@@ -140,9 +144,7 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 
 ## Mobile
 
-- Where feasible, test on iOS and Android.
 - Don't assume desktop-only behavior unless `isDesktopOnly` is `true`.
-- Avoid large in-memory structures; be mindful of memory and storage constraints.
 
 ## Agent do/don't
 
