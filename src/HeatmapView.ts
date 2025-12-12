@@ -8,6 +8,7 @@ import { processData, detectValueType } from './data';
 import { renderHeatmap, createEmptyState, RenderOptions } from './renderer';
 import { setupInteractions } from './interactions';
 import { calculateDateRange } from './dateUtils';
+import type HeatmapPlugin from './main';
 
 /**
  * Heatmap view implementation for Obsidian Bases.
@@ -21,7 +22,8 @@ export class HeatmapView extends BasesView {
 
 	constructor(
 		controller: QueryController,
-		parentEl: HTMLElement
+		parentEl: HTMLElement,
+		private plugin: HeatmapPlugin
 	) {
 		super(controller);
 		this.containerEl = parentEl.createDiv('heatmap-view-container');
@@ -166,6 +168,7 @@ export class HeatmapView extends BasesView {
 			app: this.app,
 			entries: this.processedData.entries,
 			containerEl: heatmapEl,
+			plugin: this.plugin,
 		});
 	}
 }

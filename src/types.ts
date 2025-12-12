@@ -75,3 +75,14 @@ export interface MonthLabel {
 	startColumn: number;
 	endColumn: number;
 }
+
+/**
+ * Plugin-wide settings.
+ */
+export interface HeatmapPluginSettings {
+	showHexColorInTooltip: boolean;
+}
+
+export const DEFAULT_SETTINGS: HeatmapPluginSettings = {
+	showHexColorInTooltip: false,
+};

@@ -1,18 +1,20 @@
 import { App, setTooltip } from 'obsidian';
 import { HeatmapEntry } from './types';
 import { formatDateDisplay, parseISODateString } from './dateUtils';
+import type HeatmapPlugin from './main';
 
 export interface InteractionHandlerOptions {
 	app: App;
 	entries: Map<string, HeatmapEntry>;
 	containerEl: HTMLElement;
+	plugin: HeatmapPlugin;
 }
 
 /**
  * Set up interaction handlers for the heatmap cells.
  */
 export function setupInteractions(options: InteractionHandlerOptions): () => void {
-	const { app, entries, containerEl } = options;
+	const { app, entries, containerEl, plugin } = options;
 
 	// Track event listeners for cleanup
 	const cleanupFns: (() => void)[] = [];
@@ -44,7 +46,7 @@ export function setupInteractions(options: InteractionHandlerOptions): () => voi
 		const dateStr = cell.dataset.date;
 		if (!dateStr) return;
 
-		const tooltipContent = buildTooltipContent(dateStr, entries.get(dateStr), cell);
+		const tooltipContent = buildTooltipContent(dateStr, entries.get(dateStr), cell, plugin);
 		setTooltip(cell, tooltipContent, { placement: 'top' });
 	};
 
@@ -97,7 +99,8 @@ export function setupInteractions(options: InteractionHandlerOptions): () => voi
 function buildTooltipContent(
 	dateStr: string,
 	entry: HeatmapEntry | undefined,
-	cell: HTMLElement
+	cell: HTMLElement,
+	plugin: HeatmapPlugin
 ): string {
 	const formattedDate = formatDateDisplay(dateStr);
 
@@ -107,7 +110,7 @@ function buildTooltipContent(
 
 	const displayValue = cell.dataset.displayValue || entry.displayValue;
 	const hexColor = cell.style.backgroundColor ? rgbToHex(cell.style.backgroundColor) : '';
-	const colorInfo = hexColor ? `\n${hexColor}` : '';
+	const colorInfo = plugin.settings.showHexColorInTooltip && hexColor ? `\n${hexColor}` : '';
 	return `${formattedDate}\n${displayValue}${colorInfo}`;
 }
 
