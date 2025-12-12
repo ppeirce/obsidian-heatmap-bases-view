@@ -1,8 +1,6 @@
 import {
-	TFile,
 	BasesEntry,
 	BasesPropertyId,
-	Value,
 	NumberValue,
 	BooleanValue,
 	StringValue,
@@ -18,14 +16,6 @@ import { parseDateFromFilename, formatDateISO, parseISODateString } from './date
 export type ValueType = 'boolean' | 'number' | 'unsupported';
 
 /**
- * Interface for accessing the internal value of PrimitiveValue.
- * This is a runtime property not exposed in the public type declarations.
- */
-interface PrimitiveValueInternal<T> {
-	value: T;
-}
-
-/**
  * Convert a property name to BasesPropertyId format.
  * Property IDs are formatted as "type.name"
  */
@@ -36,28 +26,6 @@ function toPropertyId(propertyName: string): BasesPropertyId {
 	}
 	// Default to frontmatter property
 	return `frontmatter.${propertyName}` as BasesPropertyId;
-}
-
-/**
- * Extract a primitive value from an Obsidian Value object.
- */
-function extractPrimitiveValue(value: Value | null): unknown {
-	if (value === null || value instanceof NullValue) {
-		return null;
-	}
-
-	// Access the internal value property for PrimitiveValue subclasses
-	if (value instanceof NumberValue || value instanceof BooleanValue || value instanceof StringValue) {
-		return (value as unknown as PrimitiveValueInternal<unknown>).value;
-	}
-
-	// For DateValue, convert to ISO string
-	if (value instanceof DateValue) {
-		return value.toString();
-	}
-
-	// Fallback to string representation
-	return value.toString();
 }
 
 /**

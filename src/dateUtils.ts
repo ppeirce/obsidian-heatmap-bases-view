@@ -261,10 +261,12 @@ export function generateMonthLabels(
 		const month = current.getMonth();
 		const week = getWeekNumber(current, rangeStart, weekStart);
 
-		if (!weekToMonths.has(week)) {
-			weekToMonths.set(week, new Set());
+		let monthSet = weekToMonths.get(week);
+		if (!monthSet) {
+			monthSet = new Set();
+			weekToMonths.set(week, monthSet);
 		}
-		weekToMonths.get(week)!.add(month);
+		monthSet.add(month);
 
 		current.setDate(current.getDate() + 1);
 	}
