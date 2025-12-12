@@ -144,5 +144,13 @@ npm run dev
 
 # Production build
 npm run build
+
+# Lint code
+npm run lint
+
+# Lint and auto-fix
+npm run lint:fix
 ```
+
+Linting runs automatically on staged files before each commit via husky pre-commit hooks.
 
