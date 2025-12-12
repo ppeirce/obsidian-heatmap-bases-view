@@ -4,6 +4,8 @@ A GitHub-contributions-style heatmap view for [Obsidian Bases](https://help.obsi
 
 **Requires Obsidian 1.10.0 or later** (Bases feature)
 
+![Heatmap visualization example](assets/heatmap-example.png)
+
 ## Features
 
 - Calendar heatmap visualization of note properties
