@@ -25,6 +25,6 @@ export default [
 		},
 	},
 	{
-		ignores: ["node_modules/", "main.js"],
+		ignores: ["node_modules/", "main.js", "vitest.config.ts"],
 	},
 ];

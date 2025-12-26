@@ -1,9 +1,5 @@
-# AI
-CLAUDE.md
-AGENTS.md
-
 # vscode
-.vscode 
+.vscode
 
 # Intellij
 *.iml
@@ -24,3 +20,9 @@ data.json
 
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
+
+# Test coverage
+coverage/
+
+# Claude Code local settings
+.claude/settings.local.json
