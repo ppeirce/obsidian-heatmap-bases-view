@@ -84,6 +84,20 @@ After adding new features, removing deprecated old features, fixing known bugs, 
 
 ## Testing
 
+### Automated tests
+
+Run tests before committing to catch regressions:
+
+```bash
+npm test              # Run all tests once
+npm run test:watch    # Run tests in watch mode during development
+npm run test:coverage # Run tests with coverage report
+```
+
+**IMPORTANT**: All tests must pass before committing. If tests fail, fix the issue before proceeding.
+
+### Manual testing
+
 - Manual install for testing: copy `main.js`, `manifest.json`, `styles.css` (if any) to:
   ```
   <Vault>/.obsidian/plugins/<plugin-id>/
@@ -149,6 +163,8 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 ## Agent do/don't
 
 **Do**
+- Run `npm test` before committing to verify no regressions.
+- Update AGENTS.md when introducing new tools, workflows, or conventions that future agents need to follow (e.g., adding a test framework, new build steps, linting rules).
 - Add commands with stable IDs (don't rename once released).
 - Provide defaults and validation in settings.
 - Write idempotent code paths so reload/unload doesn't leak listeners or intervals.
@@ -341,7 +357,12 @@ This single change fixed the bug where the view wouldn't load as the default vie
 **MANDATORY WORKFLOW:**
 
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
+2. **Run quality gates** (if code changed):
+   ```bash
+   npm test        # All tests must pass
+   npm run lint    # Fix any linting errors
+   npm run build   # Ensure production build succeeds
+   ```
 3. **Update issue status** - Close finished work, update in-progress items
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
