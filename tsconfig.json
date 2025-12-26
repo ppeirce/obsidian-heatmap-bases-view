@@ -20,5 +20,10 @@
   },
   "include": [
     "**/*.ts"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "vitest.config.ts",
+    "src/__mocks__/**"
   ]
 }

@@ -6,7 +6,7 @@ export default [
 	eslint.configs.recommended,
 	...tseslint.configs.recommendedTypeChecked,
 	{
-		files: ["src/**/*.ts"],
+		files: ["src/**/*.ts", "!src/**/*.test.ts", "!src/__mocks__/**"],
 		languageOptions: {
 			globals: {
 				...globals.node,
@@ -25,6 +25,6 @@ export default [
 		},
 	},
 	{
-		ignores: ["node_modules/", "main.js", "vitest.config.ts"],
+		ignores: ["node_modules/", "main.js", "vitest.config.ts", "**/*.test.ts", "src/__mocks__/**"],
 	},
 ];
