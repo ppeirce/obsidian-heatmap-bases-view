@@ -37,8 +37,23 @@ export function extractDate(
 ): string | null {
 	if (dateProperty === '__filename__' || !dateProperty) {
 		// Parse from filename
-		const parsed = parseDateFromFilename(entry.file.basename);
-		return parsed ? formatDateISO(parsed) : null;
+		try {
+			const parsed = parseDateFromFilename(entry.file.basename);
+			if (!parsed) {
+				console.warn(
+					`Failed to parse date from filename: "${entry.file.basename}"`,
+					{ file: entry.file.path }
+				);
+				return null;
+			}
+			return formatDateISO(parsed);
+		} catch (error) {
+			console.warn(
+				`Error parsing date from filename: "${entry.file.basename}"`,
+				{ file: entry.file.path, error: String(error) }
+			);
+			return null;
+		}
 	}
 
 	// Get from property
@@ -49,18 +64,40 @@ export function extractDate(
 		return null;
 	}
 
-	// Handle DateValue directly
-	if (value instanceof DateValue) {
-		const dateStr = value.toString();
-		// DateValue.toString() should return ISO format
-		const parsed = parseISODateString(dateStr) ?? new Date(dateStr);
-		return !isNaN(parsed.getTime()) ? formatDateISO(parsed) : null;
-	}
+	try {
+		// Handle DateValue directly
+		if (value instanceof DateValue) {
+			const dateStr = value.toString();
+			// DateValue.toString() should return ISO format
+			const parsed = parseISODateString(dateStr) ?? new Date(dateStr);
+			if (isNaN(parsed.getTime())) {
+				console.warn(
+					`Invalid date in property "${dateProperty}": "${dateStr}"`,
+					{ file: entry.file.path, property: dateProperty }
+				);
+				return null;
+			}
+			return formatDateISO(parsed);
+		}
 
-	// Try to parse from string representation
-	const strValue = value.toString();
-	const parsed = parseISODateString(strValue) ?? new Date(strValue);
-	return !isNaN(parsed.getTime()) ? formatDateISO(parsed) : null;
+		// Try to parse from string representation
+		const strValue = value.toString();
+		const parsed = parseISODateString(strValue) ?? new Date(strValue);
+		if (isNaN(parsed.getTime())) {
+			console.warn(
+				`Invalid date in property "${dateProperty}": "${strValue}"`,
+				{ file: entry.file.path, property: dateProperty }
+			);
+			return null;
+		}
+		return formatDateISO(parsed);
+	} catch (error) {
+		console.warn(
+			`Error parsing date from property "${dateProperty}"`,
+			{ file: entry.file.path, property: dateProperty, error: String(error) }
+		);
+		return null;
+	}
 }
 
 /**
@@ -158,10 +195,12 @@ export function processData(
 	let max = -Infinity;
 	let count = 0;
 	let hasNumeric = false;
+	let skippedEntries = 0;
 
 	for (const entry of entries) {
 		const date = extractDate(entry, dateProperty);
 		if (!date) {
+			skippedEntries++;
 			continue; // Skip entries without valid dates
 		}
 
@@ -197,6 +236,19 @@ export function processData(
 	if (min === max && min > 0) {
 		// Single value case - set min to 0 for better intensity scaling
 		min = 0;
+	}
+
+	// Log summary if entries were skipped
+	if (skippedEntries > 0) {
+		console.warn(
+			`Data processing summary: ${skippedEntries} entries skipped due to invalid dates.`,
+			{
+				totalEntries: entries.length,
+				skippedEntries,
+				successfulEntries: heatmapEntries.size,
+				dateProperty,
+			}
+		);
 	}
 
 	return {
