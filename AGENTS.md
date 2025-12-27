@@ -96,6 +96,39 @@ npm run test:coverage # Run tests with coverage report
 
 **IMPORTANT**: All tests must pass before committing. If tests fail, fix the issue before proceeding.
 
+### Writing tests with features
+
+**Test-driven development is expected practice in this project.** When implementing new features or functions:
+
+1. **Write tests alongside code** - Tests should be written at the same time as the feature, not as an afterthought
+2. **Test coverage expectations**:
+   - Core utilities (date parsing, color math, data processing): Comprehensive unit tests with edge cases
+   - Interactions (click handlers, keyboard navigation, tooltips): Integration tests with DOM mocking
+   - Public APIs: All public functions should have tests covering normal and edge cases
+   - Error paths: Test invalid inputs, null/undefined handling, boundary conditions
+
+3. **Test structure**:
+   - Create `src/functionName.test.ts` alongside `src/functionName.ts`
+   - Use `describe()` for grouping related tests
+   - Use clear test names that describe what is being tested (e.g., "returns zero color for intensity 0")
+   - Include both positive and negative test cases
+
+4. **Coverage tools**:
+   ```bash
+   npm run test:coverage   # Generate coverage report
+   ```
+   Review the HTML report in `coverage/` to identify untested code paths.
+
+5. **Tests serve double duty**:
+   - Verify correctness and catch regressions
+   - Document expected behavior and usage patterns
+   - Make future refactoring safer
+
+**Examples from this project:**
+- `src/colorUtils.ts` → `src/colorUtils.test.ts`: Tests for color interpolation, intensity mapping, CSS variables (37 tests)
+- `src/interactions.ts` → `src/interactions.test.ts`: Tests for click, keyboard, tooltip handlers with DOM simulation (21 tests)
+- `src/dateUtils.ts` → `src/dateUtils.test.ts`: Tests for date parsing edge cases, timezone handling, boundaries (39 tests)
+
 ### Manual testing
 
 - Manual install for testing: copy `main.js`, `manifest.json`, `styles.css` (if any) to:
