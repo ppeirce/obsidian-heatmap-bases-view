@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
 	interpolateColor,
 	calculateIntensityNumeric,
@@ -6,33 +6,36 @@ import {
 	getColorForIntensity,
 	isDarkMode,
 	getColorSchemeCSSVars,
-	COLOR_SCHEMES,
+	isValidHexColor,
+	getRelativeLuminance,
+	buildCustomColorScheme,
+	getSchemeDefinition,
 } from './colorUtils';
+import { DEFAULT_COLOR_SCHEMES } from './types';
+
+// Helper to get a test scheme definition
+const getTestScheme = () => buildCustomColorScheme('#ebedf0', '#39d353');
 
 describe('colorUtils', () => {
 	describe('interpolateColor', () => {
 		it('returns start color at t=0', () => {
 			const result = interpolateColor('#39d353', '#216e39', 0);
-			// Should be very close to start color
 			expect(result.toLowerCase()).toBe('#39d353');
 		});
 
 		it('returns end color at t=1', () => {
 			const result = interpolateColor('#39d353', '#216e39', 1);
-			// Should be very close to end color
 			expect(result.toLowerCase()).toBe('#216e39');
 		});
 
 		it('returns intermediate color at t=0.5', () => {
 			const result = interpolateColor('#ffffff', '#000000', 0.5);
-			// Result should be a gray color
 			expect(result).toMatch(/^#[0-9a-f]{6}$/i);
 		});
 
 		it('clamps t values outside [0, 1]', () => {
 			const result1 = interpolateColor('#39d353', '#216e39', -0.5);
 			const result2 = interpolateColor('#39d353', '#216e39', 1.5);
-			// Both should work without errors
 			expect(result1).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(result2).toMatch(/^#[0-9a-f]{6}$/i);
 		});
@@ -40,13 +43,13 @@ describe('colorUtils', () => {
 		it('handles hex colors with and without # prefix', () => {
 			const result1 = interpolateColor('#ff0000', '#00ff00', 0.5);
 			const result2 = interpolateColor('ff0000', '00ff00', 0.5);
-			// Both should return valid hex colors
 			expect(result1).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(result2).toMatch(/^#[0-9a-f]{6}$/i);
 		});
 
-		it('produces valid hex output for all scheme colors', () => {
-			Object.entries(COLOR_SCHEMES).forEach(([schemeName, scheme]) => {
+		it('produces valid hex output for default scheme colors', () => {
+			DEFAULT_COLOR_SCHEMES.forEach(schemeItem => {
+				const scheme = buildCustomColorScheme(schemeItem.zeroColor, schemeItem.maxColor);
 				const darkResult = interpolateColor(scheme.dark.zero, scheme.dark.max, 0.5);
 				const lightResult = interpolateColor(scheme.light.zero, scheme.light.max, 0.5);
 				expect(darkResult).toMatch(/^#[0-9a-f]{6}$/i);
@@ -98,55 +101,63 @@ describe('colorUtils', () => {
 
 		it('handles truthy values as true', () => {
 			expect(calculateIntensityBoolean(true)).toBe(1);
+			// @ts-expect-error - testing truthy behavior
 			expect(calculateIntensityBoolean(1)).toBe(1);
+			// @ts-expect-error - testing truthy behavior
 			expect(calculateIntensityBoolean('yes')).toBe(1);
 		});
 
 		it('handles falsy values as false', () => {
 			expect(calculateIntensityBoolean(false)).toBe(0);
+			// @ts-expect-error - testing falsy behavior
 			expect(calculateIntensityBoolean(0)).toBe(0);
+			// @ts-expect-error - testing falsy behavior
 			expect(calculateIntensityBoolean('')).toBe(0);
 		});
 	});
 
 	describe('getColorForIntensity', () => {
 		it('returns zero color for intensity 0', () => {
-			const darkColor = getColorForIntensity(0, 'green', true);
-			expect(darkColor).toBe(COLOR_SCHEMES.green.dark.zero);
+			const scheme = getTestScheme();
+			const darkColor = getColorForIntensity(0, scheme, true);
+			expect(darkColor).toBe(scheme.dark.zero);
 
-			const lightColor = getColorForIntensity(0, 'green', false);
-			expect(lightColor).toBe(COLOR_SCHEMES.green.light.zero);
+			const lightColor = getColorForIntensity(0, scheme, false);
+			expect(lightColor).toBe(scheme.light.zero);
 		});
 
 		it('returns max color for intensity 1', () => {
-			const darkColor = getColorForIntensity(1, 'green', true);
-			expect(darkColor).toBe(COLOR_SCHEMES.green.dark.max);
+			const scheme = getTestScheme();
+			const darkColor = getColorForIntensity(1, scheme, true);
+			expect(darkColor).toBe(scheme.dark.max);
 
-			const lightColor = getColorForIntensity(1, 'green', false);
-			expect(lightColor).toBe(COLOR_SCHEMES.green.light.max);
+			const lightColor = getColorForIntensity(1, scheme, false);
+			expect(lightColor).toBe(scheme.light.max);
 		});
 
 		it('returns interpolated color for intensity between 0 and 1', () => {
-			const color = getColorForIntensity(0.5, 'green', true);
+			const scheme = getTestScheme();
+			const color = getColorForIntensity(0.5, scheme, true);
 			expect(color).toMatch(/^#[0-9a-f]{6}$/i);
-			// Color should be different from zero and max
-			expect(color).not.toBe(COLOR_SCHEMES.green.dark.zero);
-			expect(color).not.toBe(COLOR_SCHEMES.green.dark.max);
+			expect(color).not.toBe(scheme.dark.zero);
+			expect(color).not.toBe(scheme.dark.max);
 		});
 
 		it('clamps intensity > 1 to max color', () => {
-			const color = getColorForIntensity(1.5, 'green', true);
-			expect(color).toBe(COLOR_SCHEMES.green.dark.max);
+			const scheme = getTestScheme();
+			const color = getColorForIntensity(1.5, scheme, true);
+			expect(color).toBe(scheme.dark.max);
 		});
 
 		it('clamps negative intensity to zero color', () => {
-			const color = getColorForIntensity(-0.5, 'green', true);
-			expect(color).toBe(COLOR_SCHEMES.green.dark.zero);
+			const scheme = getTestScheme();
+			const color = getColorForIntensity(-0.5, scheme, true);
+			expect(color).toBe(scheme.dark.zero);
 		});
 
-		it('supports all color schemes', () => {
-			const schemes = ['green', 'purple', 'blue', 'orange', 'gray'] as const;
-			schemes.forEach(scheme => {
+		it('works with all default color schemes', () => {
+			DEFAULT_COLOR_SCHEMES.forEach(schemeItem => {
+				const scheme = getSchemeDefinition(schemeItem);
 				const darkColor = getColorForIntensity(0.5, scheme, true);
 				const lightColor = getColorForIntensity(0.5, scheme, false);
 				expect(darkColor).toMatch(/^#[0-9a-f]{6}$/i);
@@ -155,16 +166,15 @@ describe('colorUtils', () => {
 		});
 
 		it('respects dark/light mode flag', () => {
-			const darkColor = getColorForIntensity(0.5, 'green', true);
-			const lightColor = getColorForIntensity(0.5, 'green', false);
-			// Colors should be different between dark and light modes
+			const scheme = getTestScheme();
+			const darkColor = getColorForIntensity(0.5, scheme, true);
+			const lightColor = getColorForIntensity(0.5, scheme, false);
 			expect(darkColor).not.toBe(lightColor);
 		});
 	});
 
 	describe('isDarkMode', () => {
 		beforeEach(() => {
-			// Setup DOM for testing
 			document.body.className = '';
 		});
 
@@ -194,107 +204,220 @@ describe('colorUtils', () => {
 
 	describe('getColorSchemeCSSVars', () => {
 		it('returns CSS variables for dark mode', () => {
-			const vars = getColorSchemeCSSVars('green', true);
+			const scheme = getTestScheme();
+			const vars = getColorSchemeCSSVars(scheme, true);
 			expect(vars).toContain('--heatmap-color-zero');
 			expect(vars).toContain('--heatmap-color-max');
-			expect(vars).toContain(COLOR_SCHEMES.green.dark.zero);
-			expect(vars).toContain(COLOR_SCHEMES.green.dark.max);
+			expect(vars).toContain(scheme.dark.zero);
+			expect(vars).toContain(scheme.dark.max);
 		});
 
 		it('returns CSS variables for light mode', () => {
-			const vars = getColorSchemeCSSVars('green', false);
+			const scheme = getTestScheme();
+			const vars = getColorSchemeCSSVars(scheme, false);
 			expect(vars).toContain('--heatmap-color-zero');
 			expect(vars).toContain('--heatmap-color-max');
-			expect(vars).toContain(COLOR_SCHEMES.green.light.zero);
-			expect(vars).toContain(COLOR_SCHEMES.green.light.max);
-		});
-
-		it('uses correct colors for each scheme in dark mode', () => {
-			const schemes = ['green', 'purple', 'blue', 'orange', 'gray'] as const;
-			schemes.forEach(scheme => {
-				const vars = getColorSchemeCSSVars(scheme, true);
-				const colors = COLOR_SCHEMES[scheme].dark;
-				expect(vars).toContain(colors.zero);
-				expect(vars).toContain(colors.max);
-			});
-		});
-
-		it('uses correct colors for each scheme in light mode', () => {
-			const schemes = ['green', 'purple', 'blue', 'orange', 'gray'] as const;
-			schemes.forEach(scheme => {
-				const vars = getColorSchemeCSSVars(scheme, false);
-				const colors = COLOR_SCHEMES[scheme].light;
-				expect(vars).toContain(colors.zero);
-				expect(vars).toContain(colors.max);
-			});
+			expect(vars).toContain(scheme.light.zero);
+			expect(vars).toContain(scheme.light.max);
 		});
 
 		it('returns formatted CSS string', () => {
-			const vars = getColorSchemeCSSVars('green', true);
+			const scheme = getTestScheme();
+			const vars = getColorSchemeCSSVars(scheme, true);
 			expect(vars).toMatch(/--heatmap-color-\w+:\s*#[0-9a-f]{6}/i);
 		});
 	});
 
-	describe('COLOR_SCHEMES', () => {
+	describe('DEFAULT_COLOR_SCHEMES', () => {
 		it('defines all required schemes', () => {
 			const requiredSchemes = ['green', 'purple', 'blue', 'orange', 'gray'];
-			requiredSchemes.forEach(scheme => {
-				expect(COLOR_SCHEMES).toHaveProperty(scheme);
+			requiredSchemes.forEach(schemeId => {
+				const found = DEFAULT_COLOR_SCHEMES.find(s => s.id === schemeId);
+				expect(found).toBeDefined();
 			});
 		});
 
-		it('each scheme has dark and light variants', () => {
-			Object.values(COLOR_SCHEMES).forEach(scheme => {
-				expect(scheme).toHaveProperty('dark');
-				expect(scheme).toHaveProperty('light');
-				expect(scheme.dark).toHaveProperty('zero');
-				expect(scheme.dark).toHaveProperty('max');
-				expect(scheme.light).toHaveProperty('zero');
-				expect(scheme.light).toHaveProperty('max');
+		it('each scheme has required properties', () => {
+			DEFAULT_COLOR_SCHEMES.forEach(scheme => {
+				expect(scheme).toHaveProperty('id');
+				expect(scheme).toHaveProperty('name');
+				expect(scheme).toHaveProperty('zeroColor');
+				expect(scheme).toHaveProperty('maxColor');
 			});
 		});
 
 		it('all colors are valid hex format', () => {
-			Object.values(COLOR_SCHEMES).forEach(scheme => {
-				[scheme.dark.zero, scheme.dark.max, scheme.light.zero, scheme.light.max].forEach(
-					color => {
-						expect(color).toMatch(/^#[0-9a-f]{6}$/i);
-					}
-				);
+			DEFAULT_COLOR_SCHEMES.forEach(scheme => {
+				expect(isValidHexColor(scheme.zeroColor)).toBe(true);
+				expect(isValidHexColor(scheme.maxColor)).toBe(true);
 			});
 		});
 	});
 
 	describe('Integration: intensity to color mapping', () => {
 		it('maps numeric values to appropriate colors', () => {
+			const scheme = getTestScheme();
 			const min = 0;
 			const max = 100;
 
-			// Test different intensity levels
 			const low = calculateIntensityNumeric(10, min, max);
 			const medium = calculateIntensityNumeric(50, min, max);
 			const high = calculateIntensityNumeric(90, min, max);
 
-			const lowColor = getColorForIntensity(low, 'green', true);
-			const mediumColor = getColorForIntensity(medium, 'green', true);
-			const highColor = getColorForIntensity(high, 'green', true);
+			const lowColor = getColorForIntensity(low, scheme, true);
+			const mediumColor = getColorForIntensity(medium, scheme, true);
+			const highColor = getColorForIntensity(high, scheme, true);
 
-			// All should be valid colors
 			expect(lowColor).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(mediumColor).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(highColor).toMatch(/^#[0-9a-f]{6}$/i);
 		});
 
 		it('maps boolean values to appropriate colors', () => {
+			const scheme = buildCustomColorScheme('#ebedf0', '#38bdf8');
 			const falseIntensity = calculateIntensityBoolean(false);
 			const trueIntensity = calculateIntensityBoolean(true);
 
-			const falseColor = getColorForIntensity(falseIntensity, 'blue', false);
-			const trueColor = getColorForIntensity(trueIntensity, 'blue', false);
+			const falseColor = getColorForIntensity(falseIntensity, scheme, false);
+			const trueColor = getColorForIntensity(trueIntensity, scheme, false);
 
-			// False should be zero color, true should be max color
-			expect(falseColor).toBe(COLOR_SCHEMES.blue.light.zero);
-			expect(trueColor).toBe(COLOR_SCHEMES.blue.light.max);
+			expect(falseColor).toBe(scheme.light.zero);
+			expect(trueColor).toBe(scheme.light.max);
+		});
+	});
+
+	describe('isValidHexColor', () => {
+		it('accepts valid 6-digit hex with #', () => {
+			expect(isValidHexColor('#ff0000')).toBe(true);
+			expect(isValidHexColor('#39d353')).toBe(true);
+			expect(isValidHexColor('#AABBCC')).toBe(true);
+		});
+
+		it('accepts valid 6-digit hex without #', () => {
+			expect(isValidHexColor('ff0000')).toBe(true);
+			expect(isValidHexColor('39d353')).toBe(true);
+		});
+
+		it('rejects 3-digit hex colors', () => {
+			expect(isValidHexColor('#fff')).toBe(false);
+			expect(isValidHexColor('abc')).toBe(false);
+		});
+
+		it('rejects named colors', () => {
+			expect(isValidHexColor('red')).toBe(false);
+			expect(isValidHexColor('green')).toBe(false);
+		});
+
+		it('rejects invalid characters', () => {
+			expect(isValidHexColor('#gg0000')).toBe(false);
+			expect(isValidHexColor('#xyz123')).toBe(false);
+		});
+
+		it('rejects empty strings', () => {
+			expect(isValidHexColor('')).toBe(false);
+		});
+
+		it('rejects colors with wrong length', () => {
+			expect(isValidHexColor('#ff00')).toBe(false);
+			expect(isValidHexColor('#ff00000')).toBe(false);
+		});
+	});
+
+	describe('getRelativeLuminance', () => {
+		it('returns 0 for black', () => {
+			const luminance = getRelativeLuminance('#000000');
+			expect(luminance).toBeCloseTo(0, 5);
+		});
+
+		it('returns 1 for white', () => {
+			const luminance = getRelativeLuminance('#ffffff');
+			expect(luminance).toBeCloseTo(1, 5);
+		});
+
+		it('returns intermediate value for gray', () => {
+			const luminance = getRelativeLuminance('#808080');
+			expect(luminance).toBeGreaterThan(0.1);
+			expect(luminance).toBeLessThan(0.5);
+		});
+
+		it('returns consistent values for the same color', () => {
+			const lum1 = getRelativeLuminance('#39d353');
+			const lum2 = getRelativeLuminance('#39d353');
+			expect(lum1).toBe(lum2);
+		});
+
+		it('dark colors have lower luminance than light colors', () => {
+			const darkLum = getRelativeLuminance('#161b22');
+			const lightLum = getRelativeLuminance('#ebedf0');
+			expect(darkLum).toBeLessThan(lightLum);
+		});
+	});
+
+	describe('buildCustomColorScheme', () => {
+		it('creates scheme with both dark and light variants', () => {
+			const scheme = buildCustomColorScheme('#ebedf0', '#ff0000');
+			expect(scheme).toHaveProperty('dark');
+			expect(scheme).toHaveProperty('light');
+			expect(scheme.dark).toHaveProperty('zero');
+			expect(scheme.dark).toHaveProperty('max');
+			expect(scheme.light).toHaveProperty('zero');
+			expect(scheme.light).toHaveProperty('max');
+		});
+
+		it('uses provided max color directly', () => {
+			const scheme = buildCustomColorScheme('#ebedf0', '#ff0000');
+			expect(scheme.dark.max).toBe('#ff0000');
+			expect(scheme.light.max).toBe('#ff0000');
+		});
+
+		it('adjusts light zero color for dark mode', () => {
+			const scheme = buildCustomColorScheme('#ffffff', '#ff0000');
+			const darkZeroLum = getRelativeLuminance(scheme.dark.zero);
+			expect(darkZeroLum).toBeLessThan(0.15);
+		});
+
+		it('adjusts dark zero color for light mode', () => {
+			const scheme = buildCustomColorScheme('#000000', '#ff0000');
+			const originalLum = getRelativeLuminance('#000000');
+			const lightZeroLum = getRelativeLuminance(scheme.light.zero);
+			expect(lightZeroLum).toBeGreaterThan(originalLum);
+			expect(lightZeroLum).toBeGreaterThan(0.2);
+		});
+
+		it('handles colors without # prefix', () => {
+			const scheme = buildCustomColorScheme('ebedf0', 'ff0000');
+			expect(scheme.dark.max).toBe('#ff0000');
+			expect(scheme.light.max).toBe('#ff0000');
+		});
+
+		it('preserves appropriately dark zero color in dark mode', () => {
+			const scheme = buildCustomColorScheme('#161b22', '#39d353');
+			expect(scheme.dark.zero).toBe('#161b22');
+		});
+
+		it('preserves appropriately light zero color in light mode', () => {
+			const scheme = buildCustomColorScheme('#ebedf0', '#216e39');
+			expect(scheme.light.zero).toBe('#ebedf0');
+		});
+	});
+
+	describe('getSchemeDefinition', () => {
+		it('converts ColorSchemeItem to ColorSchemeDefinition', () => {
+			const schemeItem = DEFAULT_COLOR_SCHEMES[0]; // green
+			const schemeDef = getSchemeDefinition(schemeItem);
+
+			expect(schemeDef).toHaveProperty('dark');
+			expect(schemeDef).toHaveProperty('light');
+			expect(schemeDef.dark.max).toBe(schemeItem.maxColor);
+			expect(schemeDef.light.max).toBe(schemeItem.maxColor);
+		});
+
+		it('works with all default schemes', () => {
+			DEFAULT_COLOR_SCHEMES.forEach(schemeItem => {
+				const schemeDef = getSchemeDefinition(schemeItem);
+				expect(schemeDef.dark.max).toBe(schemeItem.maxColor);
+				expect(schemeDef.light.max).toBe(schemeItem.maxColor);
+			});
 		});
 	});
 });

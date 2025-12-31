@@ -31,7 +31,7 @@ export interface HeatmapViewConfig {
 	valueProperty: string;     // property name to visualize
 	startDate: string | null;  // ISO date or null for auto
 	endDate: string | null;    // ISO date or null for auto
-	colorScheme: ColorScheme;  // "green" | "purple" | "blue" | etc.
+	colorScheme: ColorScheme;  // scheme id from plugin settings
 	weekStart: 0 | 1;          // 0 = Sunday, 1 = Monday
 	showWeekdayLabels: boolean;
 	showMonthLabels: boolean;
@@ -39,7 +39,19 @@ export interface HeatmapViewConfig {
 	maxValue: number | null;   // override max for intensity scale (null = auto)
 }
 
-export type ColorScheme = 'green' | 'purple' | 'blue' | 'orange' | 'gray';
+// ColorScheme is now a string (scheme id) since schemes are user-configurable
+export type ColorScheme = string;
+
+/**
+ * A user-configurable color scheme stored in plugin settings.
+ */
+export interface ColorSchemeItem {
+	id: string;           // Unique identifier (e.g., 'green', 'my-custom')
+	name: string;         // Display name (e.g., 'Green', 'My Custom')
+	zeroColor: string;    // Hex color for zero/empty values
+	maxColor: string;     // Hex color for max intensity
+	isDefault?: boolean;  // True for built-in schemes
+}
 
 /**
  * Represents the visual state of a single cell.
@@ -81,8 +93,21 @@ export interface MonthLabel {
  */
 export interface HeatmapPluginSettings {
 	showHexColorInTooltip: boolean;
+	colorSchemes: ColorSchemeItem[];
 }
+
+/**
+ * Default color schemes that ship with the plugin.
+ */
+export const DEFAULT_COLOR_SCHEMES: ColorSchemeItem[] = [
+	{ id: 'green', name: 'Green', zeroColor: '#ebedf0', maxColor: '#39d353', isDefault: true },
+	{ id: 'purple', name: 'Purple', zeroColor: '#ebedf0', maxColor: '#a78bfa', isDefault: true },
+	{ id: 'blue', name: 'Blue', zeroColor: '#ebedf0', maxColor: '#38bdf8', isDefault: true },
+	{ id: 'orange', name: 'Orange', zeroColor: '#ebedf0', maxColor: '#fb923c', isDefault: true },
+	{ id: 'gray', name: 'Gray', zeroColor: '#ebedf0', maxColor: '#adbac7', isDefault: true },
+];
 
 export const DEFAULT_SETTINGS: HeatmapPluginSettings = {
 	showHexColorInTooltip: false,
+	colorSchemes: DEFAULT_COLOR_SCHEMES,
 };

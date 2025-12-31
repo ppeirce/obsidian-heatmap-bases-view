@@ -6,6 +6,7 @@ import {
 import { ColorScheme, HeatmapViewConfig, ProcessedData } from './types';
 import { processData, detectValueType } from './data';
 import { renderHeatmap, createEmptyState, RenderOptions } from './renderer';
+import { getSchemeDefinition } from './colorUtils';
 import { setupInteractions } from './interactions';
 import { calculateDateRange } from './dateUtils';
 import type HeatmapPlugin from './main';
@@ -151,9 +152,15 @@ export class HeatmapView extends BasesView {
 			viewConfig.endDate
 		);
 
+		// Look up color scheme from plugin settings
+		const schemeItem = this.plugin.settings.colorSchemes.find(
+			s => s.id === viewConfig.colorScheme
+		) ?? this.plugin.settings.colorSchemes[0];
+		const schemeDefinition = getSchemeDefinition(schemeItem);
+
 		// Render options
 		const renderOptions: RenderOptions = {
-			colorScheme: viewConfig.colorScheme,
+			schemeDefinition,
 			weekStart: viewConfig.weekStart,
 			showWeekdayLabels: viewConfig.showWeekdayLabels,
 			showMonthLabels: viewConfig.showMonthLabels,

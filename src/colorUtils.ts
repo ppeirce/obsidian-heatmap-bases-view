@@ -1,4 +1,4 @@
-import { ColorScheme } from './types';
+import { ColorSchemeItem } from './types';
 
 /**
  * Color scheme definitions with light and dark variants.
@@ -15,59 +15,6 @@ export interface ColorSchemeDefinition {
 		max: string;
 	};
 }
-
-export const COLOR_SCHEMES: Record<ColorScheme, ColorSchemeDefinition> = {
-	green: {
-		dark: {
-			zero: '#161b22',
-			max: '#39d353',
-		},
-		light: {
-			zero: '#ebedf0',
-			max: '#216e39',
-		},
-	},
-	purple: {
-		dark: {
-			zero: '#1a1523',
-			max: '#a78bfa',
-		},
-		light: {
-			zero: '#ebedf0',
-			max: '#5b21b6',
-		},
-	},
-	blue: {
-		dark: {
-			zero: '#161b22',
-			max: '#38bdf8',
-		},
-		light: {
-			zero: '#ebedf0',
-			max: '#0284c7',
-		},
-	},
-	orange: {
-		dark: {
-			zero: '#1c1917',
-			max: '#fb923c',
-		},
-		light: {
-			zero: '#ebedf0',
-			max: '#ea580c',
-		},
-	},
-	gray: {
-		dark: {
-			zero: '#161b22',
-			max: '#adbac7',
-		},
-		light: {
-			zero: '#ebedf0',
-			max: '#444c56',
-		},
-	},
-};
 
 /**
  * Parse a hex color string to RGB values.
@@ -93,6 +40,21 @@ function rgbToHex(r: number, g: number, b: number): string {
 		return clamped.toString(16).padStart(2, '0');
 	};
 	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/**
+ * Validate a hex color string.
+ * Accepts 6-digit hex with or without leading #.
+ */
+export function isValidHexColor(color: string): boolean {
+	return /^#?[0-9a-f]{6}$/i.test(color);
+}
+
+/**
+ * Normalize a hex color to include the # prefix.
+ */
+function normalizeHex(hex: string): string {
+	return hex.startsWith('#') ? hex : `#${hex}`;
 }
 
 /**
@@ -191,6 +153,74 @@ export function interpolateColor(color1: string, color2: string, t: number): str
 }
 
 /**
+ * Calculate relative luminance of a hex color (0-1 scale).
+ * Used to determine if a color is "dark" or "light".
+ */
+export function getRelativeLuminance(hex: string): number {
+	const rgb = hexToRgb(hex);
+	// Use sRGB luminance formula with linearized values
+	const r = srgbToLinear(rgb.r / 255);
+	const g = srgbToLinear(rgb.g / 255);
+	const b = srgbToLinear(rgb.b / 255);
+	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * Adjust a color for theme appropriateness.
+ * For dark mode: ensures zero color is dark enough
+ * For light mode: ensures zero color is light enough
+ */
+function adjustColorForTheme(hex: string, isDark: boolean): string {
+	const luminance = getRelativeLuminance(hex);
+
+	if (isDark) {
+		// Dark mode: zero color should be dark (luminance < 0.15)
+		if (luminance > 0.15) {
+			// Darken by interpolating toward standard dark background
+			return interpolateColor(hex, '#161b22', 0.7);
+		}
+	} else {
+		// Light mode: zero color should be light (luminance > 0.85)
+		if (luminance < 0.85) {
+			// Lighten by interpolating toward standard light background
+			return interpolateColor(hex, '#ebedf0', 0.7);
+		}
+	}
+	return hex;
+}
+
+/**
+ * Build a ColorSchemeDefinition from custom colors.
+ * Auto-adjusts zero color for dark/light themes.
+ */
+export function buildCustomColorScheme(
+	zeroColor: string,
+	maxColor: string
+): ColorSchemeDefinition {
+	const normalizedZero = normalizeHex(zeroColor);
+	const normalizedMax = normalizeHex(maxColor);
+
+	return {
+		dark: {
+			zero: adjustColorForTheme(normalizedZero, true),
+			max: normalizedMax,
+		},
+		light: {
+			zero: adjustColorForTheme(normalizedZero, false),
+			max: normalizedMax,
+		},
+	};
+}
+
+/**
+ * Get a ColorSchemeDefinition from a ColorSchemeItem.
+ * Builds the dark/light variants with auto-adjusted zero colors.
+ */
+export function getSchemeDefinition(scheme: ColorSchemeItem): ColorSchemeDefinition {
+	return buildCustomColorScheme(scheme.zeroColor, scheme.maxColor);
+}
+
+/**
  * Calculate intensity (0-1) for a numeric value.
  */
 export function calculateIntensityNumeric(
@@ -212,15 +242,18 @@ export function calculateIntensityBoolean(value: boolean): number {
 }
 
 /**
- * Get the color for a given intensity and scheme.
+ * Get the color for a given intensity and scheme definition.
  * Interpolates smoothly between zero and max colors based on intensity.
+ * @param intensity - Value between 0 and 1
+ * @param schemeDefinition - The color scheme definition with dark/light variants
+ * @param isDark - Whether dark mode is active
  */
 export function getColorForIntensity(
 	intensity: number,
-	scheme: ColorScheme,
+	schemeDefinition: ColorSchemeDefinition,
 	isDark: boolean
 ): string {
-	const colors = isDark ? COLOR_SCHEMES[scheme].dark : COLOR_SCHEMES[scheme].light;
+	const colors = isDark ? schemeDefinition.dark : schemeDefinition.light;
 
 	if (intensity <= 0) {
 		return colors.zero;
@@ -241,8 +274,11 @@ export function isDarkMode(): boolean {
 /**
  * Get CSS custom properties for a color scheme.
  */
-export function getColorSchemeCSSVars(scheme: ColorScheme, isDark: boolean): string {
-	const colors = isDark ? COLOR_SCHEMES[scheme].dark : COLOR_SCHEMES[scheme].light;
+export function getColorSchemeCSSVars(
+	schemeDefinition: ColorSchemeDefinition,
+	isDark: boolean
+): string {
+	const colors = isDark ? schemeDefinition.dark : schemeDefinition.light;
 
 	return `
 		--heatmap-color-zero: ${colors.zero};

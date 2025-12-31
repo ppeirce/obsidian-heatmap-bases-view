@@ -1,4 +1,4 @@
-import { HeatmapEntry, ProcessedData, ColorScheme, CellState, MonthLabel, DateRange } from './types';
+import { HeatmapEntry, ProcessedData, CellState, MonthLabel, DateRange } from './types';
 import {
 	generateDateRange,
 	getDayOfWeek,
@@ -12,10 +12,11 @@ import {
 	calculateIntensityBoolean,
 	getColorForIntensity,
 	isDarkMode,
+	ColorSchemeDefinition,
 } from './colorUtils';
 
 export interface RenderOptions {
-	colorScheme: ColorScheme;
+	schemeDefinition: ColorSchemeDefinition;
 	weekStart: 0 | 1;
 	showWeekdayLabels: boolean;
 	showMonthLabels: boolean;
@@ -60,7 +61,7 @@ function createCellElement(
 	row: number,
 	column: number,
 	entry: HeatmapEntry | undefined,
-	colorScheme: ColorScheme
+	schemeDefinition: ColorSchemeDefinition
 ): HTMLElement {
 	const cell = document.createElement('div');
 	cell.className = 'heatmap-cell';
@@ -81,7 +82,7 @@ function createCellElement(
 		cell.classList.add('heatmap-cell--filled');
 		cell.dataset.notePath = state.note.path;
 		cell.dataset.intensity = String(state.intensity);
-		cell.style.backgroundColor = getColorForIntensity(state.intensity, colorScheme, dark);
+		cell.style.backgroundColor = getColorForIntensity(state.intensity, schemeDefinition, dark);
 	}
 
 	// Store display value for tooltip
@@ -176,7 +177,7 @@ export function renderHeatmap(
 	options: RenderOptions
 ): HTMLElement {
 	const { entries, stats } = data;
-	const { colorScheme, weekStart, showWeekdayLabels, showMonthLabels } = options;
+	const { schemeDefinition, weekStart, showWeekdayLabels, showMonthLabels } = options;
 
 	// Generate all dates in range
 	const allDates = generateDateRange(dateRange.start, dateRange.end);
@@ -189,7 +190,7 @@ export function renderHeatmap(
 
 	// Create main container
 	const container = document.createElement('div');
-	container.className = `heatmap-container heatmap--${colorScheme}`;
+	container.className = 'heatmap-container';
 
 	// Apply theme class
 	if (isDarkMode()) {
@@ -245,7 +246,7 @@ export function renderHeatmap(
 			dayOfWeek + 1, // 1-indexed for CSS grid
 			weekNum,
 			entry,
-			colorScheme
+			schemeDefinition
 		);
 
 		cellsContainer.appendChild(cell);
