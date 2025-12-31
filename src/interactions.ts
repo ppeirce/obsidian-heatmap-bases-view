@@ -36,7 +36,7 @@ export function setupInteractions(options: InteractionHandlerOptions): () => voi
 	containerEl.addEventListener('click', clickHandler);
 	cleanupFns.push(() => containerEl.removeEventListener('click', clickHandler));
 
-	// Handle hover for tooltips
+	// Handle hover for tooltips and page preview
 	const mouseoverHandler = (event: MouseEvent) => {
 		const target = event.target as HTMLElement;
 		const cell = target.closest('.heatmap-cell');
@@ -45,6 +45,19 @@ export function setupInteractions(options: InteractionHandlerOptions): () => voi
 
 		const dateStr = cell.dataset.date;
 		if (!dateStr) return;
+
+		// Trigger page preview when Ctrl/Cmd is held
+		const notePath = cell.dataset.notePath;
+		if (notePath && (event.ctrlKey || event.metaKey)) {
+			app.workspace.trigger('hover-link', {
+				event,
+				source: 'heatmap-bases-view',
+				hoverParent: containerEl,
+				targetEl: cell,
+				linktext: notePath,
+				sourcePath: '',
+			});
+		}
 
 		const tooltipContent = buildTooltipContent(dateStr, entries.get(dateStr), cell, plugin);
 		setTooltip(cell, tooltipContent, { placement: 'top' });

@@ -16,6 +16,15 @@ export default class HeatmapPlugin extends Plugin {
 		await this.loadSettings();
 		this.addSettingTab(new HeatmapSettingTab(this.app, this));
 
+		// Register with Page Preview plugin for hover previews
+		// Note: registerHoverLinkSource is not in the public type definitions but exists at runtime
+		(this.app.workspace as unknown as {
+			registerHoverLinkSource: (id: string, info: { display: string; defaultMod: boolean }) => void;
+		}).registerHoverLinkSource('heatmap-bases-view', {
+			display: 'Heatmap',
+			defaultMod: true,
+		});
+
 		this.registerBasesView('heatmap', {
 			name: 'Heatmap',
 			icon: 'calendar-heat',
