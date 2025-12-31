@@ -11,7 +11,7 @@ A GitHub-contributions-style heatmap view for [Obsidian Bases](https://help.obsi
 - Calendar heatmap visualization of note properties
 - Support for boolean (checkbox) and numeric properties
 - Parse dates from filenames (daily notes) or date properties
-- 5 color schemes: Green, Purple, Blue, Orange, Gray
+- Customizable color schemes (5 built-in, add your own in Settings)
 - Light and dark theme support
 - Configurable date ranges
 - Click cells to open corresponding notes
@@ -122,7 +122,7 @@ In the Heatmap settings:
 | Value property | Boolean or number property to visualize |
 | Start date | Beginning of date range (YYYY-MM-DD), or leave empty for auto |
 | End date | End of date range (YYYY-MM-DD), or leave empty for today |
-| Color scheme | Green, Purple, Blue, Orange, or Gray |
+| Color scheme | Select from available schemes (customize in Settings) |
 | Week starts on | Sunday or Monday |
 | Show weekday labels | Toggle Mon/Wed/Fri labels |
 | Show month labels | Toggle month labels at top |

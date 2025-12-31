@@ -125,7 +125,7 @@ npm run test:coverage # Run tests with coverage report
    - Make future refactoring safer
 
 **Examples from this project:**
-- `src/colorUtils.ts` → `src/colorUtils.test.ts`: Tests for color interpolation, intensity mapping, CSS variables (37 tests)
+- `src/colorUtils.ts` → `src/colorUtils.test.ts`: Tests for color interpolation, intensity mapping, scheme definitions (56 tests)
 - `src/interactions.ts` → `src/interactions.test.ts`: Tests for click, keyboard, tooltip handlers with DOM simulation (21 tests)
 - `src/dateUtils.ts` → `src/dateUtils.test.ts`: Tests for date parsing edge cases, timezone handling, boundaries (39 tests)
 
