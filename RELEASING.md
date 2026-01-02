@@ -140,13 +140,90 @@ If `main.js` is missing, run `npm run build` before creating the release.
 
 The `minAppVersion` in `manifest.json` should be the **minimum Obsidian version** required to run your plugin. Update this only when you use new Obsidian API features that require a newer version.
 
-## Quick Reference
+## Quick Reference: Full CLI Workflow
 
-**Current version**: Check `manifest.json` for the current version.
+This is the recommended approach using the GitHub CLI (`gh`). No browser needed.
 
-**One-liner for patch release**:
+### 1. Ensure clean state
+
 ```bash
-npm version patch && git push && git push --tags && npm run build
+git status                  # Should be clean
+npm test                    # All tests pass
+npm run lint                # No linting errors
+npm run build               # Build succeeds
 ```
 
-Then create the GitHub release with the three files attached.
+### 2. Bump version numbers
+
+Edit these files manually (replace `X.Y.Z` with your new version):
+
+**manifest.json:**
+```json
+"version": "X.Y.Z",
+```
+
+**versions.json** (add new entry):
+```json
+{
+  "1.0.4": "1.10.0",
+  "X.Y.Z": "1.10.0"
+}
+```
+
+### 3. Rebuild and commit
+
+```bash
+npm run build
+git add manifest.json versions.json main.js
+git commit -m "X.Y.Z"
+```
+
+### 4. Tag and push
+
+```bash
+git tag X.Y.Z
+git push
+git push --tags
+```
+
+### 5. Create GitHub release with assets
+
+```bash
+gh release create X.Y.Z main.js manifest.json styles.css \
+  --title "X.Y.Z" \
+  --notes "## Changes
+
+- Change 1
+- Change 2
+- Change 3"
+```
+
+### Complete example (1.0.6)
+
+```bash
+# Verify clean state
+npm test && npm run lint && npm run build
+
+# Edit manifest.json: "version": "1.0.6"
+# Edit versions.json: add "1.0.6": "1.10.0"
+
+# Rebuild with new version
+npm run build
+
+# Commit, tag, push
+git add manifest.json versions.json main.js
+git commit -m "1.0.6"
+git tag 1.0.6
+git push && git push --tags
+
+# Create release with assets attached
+gh release create 1.0.6 main.js manifest.json styles.css \
+  --title "1.0.6" \
+  --notes "## Changes
+
+- Add eslint-plugin-obsidianmd for Obsidian-specific linting
+- Fix inline styles to use CSS classes
+- Add page preview support on Ctrl/Cmd+hover"
+```
+
+**Current version**: Check `manifest.json` for the current version.
