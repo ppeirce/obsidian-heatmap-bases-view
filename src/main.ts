@@ -188,11 +188,7 @@ class HeatmapSettingTab extends PluginSettingTab {
 
 		// Add color preview swatch
 		const previewEl = setting.controlEl.createDiv('heatmap-color-scheme-preview');
-		previewEl.style.width = '60px';
-		previewEl.style.height = '20px';
-		previewEl.style.borderRadius = '4px';
-		previewEl.style.marginRight = '8px';
-		previewEl.style.background = `linear-gradient(to right, ${scheme.zeroColor}, ${scheme.maxColor})`;
+		previewEl.setCssProps({ 'background': `linear-gradient(to right, ${scheme.zeroColor}, ${scheme.maxColor})` });
 		// Move preview to the left of buttons
 		setting.controlEl.insertBefore(previewEl, setting.controlEl.firstChild);
 	}
@@ -260,7 +256,7 @@ class EditSchemeModal extends Modal {
 			.setName('Name')
 			.setDesc('Display name for this color scheme')
 			.addText(text => text
-				.setPlaceholder('My Custom Scheme')
+				.setPlaceholder('My custom scheme')
 				.setValue(this.scheme.name)
 				.onChange(value => this.scheme.name = value));
 
@@ -282,8 +278,6 @@ class EditSchemeModal extends Modal {
 
 		// Error message area
 		this.errorEl = contentEl.createDiv('heatmap-modal-error');
-		this.errorEl.style.color = 'var(--text-error)';
-		this.errorEl.style.marginBottom = '1em';
 
 		// Buttons
 		new Setting(contentEl)

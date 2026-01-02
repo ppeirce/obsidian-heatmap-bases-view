@@ -182,3 +182,16 @@
 .heatmap-scroll-wrapper::-webkit-scrollbar-thumb:hover {
 	background: var(--background-modifier-border-hover);
 }
+
+/* Settings page styles */
+.heatmap-color-scheme-preview {
+	width: 60px;
+	height: 20px;
+	border-radius: 4px;
+	margin-right: 8px;
+}
+
+.heatmap-modal-error {
+	color: var(--text-error);
+	margin-bottom: 1em;
+}
