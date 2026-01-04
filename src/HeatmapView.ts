@@ -3,7 +3,13 @@ import {
 	BasesEntry,
 	QueryController,
 } from 'obsidian';
-import { ColorScheme, HeatmapViewConfig, ProcessedData } from './types';
+import {
+	CellSizePreset,
+	ColorScheme,
+	HeatmapViewConfig,
+	LayoutDirection,
+	ProcessedData,
+} from './types';
 import { processData, detectValueType } from './data';
 import { renderHeatmap, createEmptyState, RenderOptions } from './renderer';
 import { getSchemeDefinition } from './colorUtils';
@@ -52,6 +58,8 @@ export class HeatmapView extends BasesView {
 			weekStart: parseInt(config.get('weekStart') as string || '0', 10) as 0 | 1,
 			showWeekdayLabels: config.get('showWeekdayLabels') !== false,
 			showMonthLabels: config.get('showMonthLabels') !== false,
+			layoutDirection: (config.get('layoutDirection') as LayoutDirection) || 'horizontal',
+			cellSize: (config.get('cellSize') as CellSizePreset) || 'small',
 			minValue: minValue !== null && !isNaN(minValue) ? minValue : null,
 			maxValue: maxValue !== null && !isNaN(maxValue) ? maxValue : null,
 		};
@@ -164,6 +172,8 @@ export class HeatmapView extends BasesView {
 			weekStart: viewConfig.weekStart,
 			showWeekdayLabels: viewConfig.showWeekdayLabels,
 			showMonthLabels: viewConfig.showMonthLabels,
+			layoutDirection: viewConfig.layoutDirection,
+			cellSize: viewConfig.cellSize,
 		};
 
 		// Render heatmap
@@ -176,6 +186,7 @@ export class HeatmapView extends BasesView {
 			entries: this.processedData.entries,
 			containerEl: heatmapEl,
 			plugin: this.plugin,
+			layoutDirection: viewConfig.layoutDirection,
 		});
 	}
 }

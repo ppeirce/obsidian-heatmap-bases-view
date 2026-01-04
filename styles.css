@@ -29,6 +29,13 @@
 	padding-bottom: var(--size-4-2);
 }
 
+.heatmap-scroll-wrapper--vertical {
+	overflow-x: hidden;
+	overflow-y: auto;
+	max-height: 60vh;
+	padding-bottom: 0;
+}
+
 /* Inner wrapper keeps month labels aligned with grid */
 .heatmap-inner-wrapper {
 	display: inline-block;
@@ -39,14 +46,32 @@
 	padding-left: calc(var(--weekday-label-width) + var(--size-4-2));
 }
 
-/* Month labels row - uses CSS grid matching the cells */
+/* Month labels */
 .heatmap-month-labels {
+	font-size: var(--label-font-size);
+	color: var(--label-color);
+	background: var(--background-primary);
+	z-index: 1;
+}
+
+/* Month labels row - uses CSS grid matching the cells */
+.heatmap-month-labels-horizontal {
+	position: sticky;
+	top: 0;
 	display: grid;
 	grid-template-columns: repeat(var(--total-weeks, 53), calc(var(--cell-size) + var(--cell-gap)));
 	height: 16px;
 	margin-bottom: var(--size-4-1);
-	font-size: var(--label-font-size);
-	color: var(--label-color);
+}
+
+/* Month labels column for vertical layout */
+.heatmap-month-labels-vertical {
+	position: sticky;
+	left: 0;
+	display: grid;
+	grid-template-rows: repeat(var(--total-weeks), calc(var(--cell-size) + var(--cell-gap)));
+	width: var(--weekday-label-width);
+	margin-right: var(--size-4-1);
 }
 
 .heatmap-month-label {
@@ -61,8 +86,19 @@
 	gap: var(--size-4-2);
 }
 
+.heatmap-grid--vertical {
+	flex-direction: column;
+}
+
+.heatmap-grid-body {
+	display: flex;
+	gap: var(--size-4-2);
+}
+
 /* Weekday labels column */
 .heatmap-weekday-labels {
+	position: sticky;
+	left: 0;
 	display: flex;
 	flex-direction: column;
 	width: var(--weekday-label-width);
@@ -70,6 +106,8 @@
 	font-size: var(--label-font-size);
 	color: var(--label-color);
 	gap: var(--cell-gap);
+	background: var(--background-primary);
+	z-index: 1;
 }
 
 .heatmap-weekday-label {
@@ -79,13 +117,49 @@
 	padding-right: var(--size-4-1);
 }
 
+/* Weekday labels row for vertical layout */
+.heatmap-weekday-labels-horizontal {
+	position: sticky;
+	top: 0;
+	display: grid;
+	grid-template-columns: repeat(7, var(--cell-size));
+	gap: var(--cell-gap);
+	font-size: var(--label-font-size);
+	color: var(--label-color);
+	background: var(--background-primary);
+	z-index: 1;
+	margin-bottom: var(--size-4-1);
+}
+
+.heatmap-weekday-labels-horizontal--with-months {
+	padding-left: calc(var(--weekday-label-width) + var(--size-4-1));
+}
+
+.heatmap-weekday-labels-horizontal .heatmap-weekday-label {
+	height: auto;
+	line-height: 1.2;
+	text-align: center;
+	padding-right: 0;
+}
+
 /* Cells grid - CSS Grid layout */
 .heatmap-cells {
 	display: grid;
+	gap: var(--cell-gap);
+	content-visibility: auto;
+	contain: layout paint size;
+}
+
+.heatmap-cells--horizontal {
 	grid-template-rows: repeat(7, var(--cell-size));
 	grid-auto-columns: var(--cell-size);
 	grid-auto-flow: column;
-	gap: var(--cell-gap);
+}
+
+.heatmap-cells--vertical {
+	grid-template-columns: repeat(7, var(--cell-size));
+	grid-auto-rows: var(--cell-size);
+	grid-auto-flow: row;
 }
 
 /* Individual cell */

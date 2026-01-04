@@ -1,5 +1,5 @@
 import { App, setTooltip } from 'obsidian';
-import { HeatmapEntry } from './types';
+import { HeatmapEntry, LayoutDirection } from './types';
 import { formatDateDisplay, parseISODateString } from './dateUtils';
 import type HeatmapPlugin from './main';
 
@@ -8,13 +8,14 @@ export interface InteractionHandlerOptions {
 	entries: Map<string, HeatmapEntry>;
 	containerEl: HTMLElement;
 	plugin: HeatmapPlugin;
+	layoutDirection?: LayoutDirection;
 }
 
 /**
  * Set up interaction handlers for the heatmap cells.
  */
 export function setupInteractions(options: InteractionHandlerOptions): () => void {
-	const { app, entries, containerEl, plugin } = options;
+	const { app, entries, containerEl, plugin, layoutDirection = 'horizontal' } = options;
 
 	// Track event listeners for cleanup
 	const cleanupFns: (() => void)[] = [];
@@ -87,7 +88,7 @@ export function setupInteractions(options: InteractionHandlerOptions): () => voi
 		// Handle arrow key navigation
 		if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
 			event.preventDefault();
-			navigateToAdjacentCell(cell, event.key, containerEl);
+			navigateToAdjacentCell(cell, event.key, containerEl, layoutDirection);
 		}
 	};
 
@@ -156,35 +157,36 @@ function rgbToHex(rgb: string): string {
 function navigateToAdjacentCell(
 	currentCell: HTMLElement,
 	key: string,
-	containerEl: HTMLElement
+	containerEl: HTMLElement,
+	layoutDirection: LayoutDirection
 ): void {
 	const currentDate = currentCell.dataset.date;
 	if (!currentDate) return;
 
 	const date = parseISODateString(currentDate) ?? new Date(currentDate);
 	if (isNaN(date.getTime())) return;
-	let targetDate: Date;
+	let dayOffset = 0;
+	const isVertical = layoutDirection === 'vertical';
 
 	switch (key) {
 		case 'ArrowUp':
-			targetDate = new Date(date);
-			targetDate.setDate(date.getDate() - 1);
+			dayOffset = isVertical ? -7 : -1;
 			break;
 		case 'ArrowDown':
-			targetDate = new Date(date);
-			targetDate.setDate(date.getDate() + 1);
+			dayOffset = isVertical ? 7 : 1;
 			break;
 		case 'ArrowLeft':
-			targetDate = new Date(date);
-			targetDate.setDate(date.getDate() - 7);
+			dayOffset = isVertical ? -1 : -7;
 			break;
 		case 'ArrowRight':
-			targetDate = new Date(date);
-			targetDate.setDate(date.getDate() + 7);
+			dayOffset = isVertical ? 1 : 7;
 			break;
 		default:
 			return;
 	}
+
+	const targetDate = new Date(date);
+	targetDate.setDate(date.getDate() + dayOffset);
 
 	const targetDateStr = formatDateISO(targetDate);
 	const targetCell = containerEl.querySelector(

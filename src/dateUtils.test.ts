@@ -10,6 +10,7 @@ import {
 	getWeekNumber,
 	calculateDateRange,
 	generateMonthLabels,
+	generateVerticalMonthLabels,
 	getWeekdayLabels,
 } from './dateUtils';
 
@@ -291,6 +292,40 @@ describe('dateUtils', () => {
 				expect(label.startColumn).toBeDefined();
 				expect(label.endColumn).toBeDefined();
 				expect(label.endColumn).toBeGreaterThanOrEqual(label.startColumn);
+			});
+		});
+	});
+
+	describe('generateVerticalMonthLabels', () => {
+		it('generates labels for a full year', () => {
+			const start = new Date(2024, 0, 1);
+			const end = new Date(2024, 11, 31);
+			const labels = generateVerticalMonthLabels(start, end, 0);
+
+			expect(labels.length).toBe(12);
+			expect(labels[0].name).toBe('Jan');
+			expect(labels[11].name).toBe('Dec');
+		});
+
+		it('generates labels for partial year', () => {
+			const start = new Date(2024, 5, 1); // June
+			const end = new Date(2024, 8, 30); // September
+			const labels = generateVerticalMonthLabels(start, end, 0);
+
+			expect(labels.length).toBe(4);
+			expect(labels[0].name).toBe('Jun');
+			expect(labels[3].name).toBe('Sep');
+		});
+
+		it('includes startRow and endRow', () => {
+			const start = new Date(2024, 0, 1);
+			const end = new Date(2024, 1, 29);
+			const labels = generateVerticalMonthLabels(start, end, 0);
+
+			labels.forEach(label => {
+				expect(label.startRow).toBeDefined();
+				expect(label.endRow).toBeDefined();
+				expect(label.endRow).toBeGreaterThanOrEqual(label.startRow);
 			});
 		});
 	});

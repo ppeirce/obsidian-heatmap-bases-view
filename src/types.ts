@@ -35,12 +35,24 @@ export interface HeatmapViewConfig {
 	weekStart: 0 | 1;          // 0 = Sunday, 1 = Monday
 	showWeekdayLabels: boolean;
 	showMonthLabels: boolean;
+	layoutDirection: LayoutDirection;
+	cellSize: CellSizePreset;
 	minValue: number | null;   // override min for intensity scale (null = auto)
 	maxValue: number | null;   // override max for intensity scale (null = auto)
 }
 
 // ColorScheme is now a string (scheme id) since schemes are user-configurable
 export type ColorScheme = string;
+
+export type LayoutDirection = 'horizontal' | 'vertical';
+
+export type CellSizePreset = 'small' | 'medium' | 'large';
+
+export const CELL_SIZE_VALUES: Record<CellSizePreset, number> = {
+	small: 11,
+	medium: 16,
+	large: 24,
+};
 
 /**
  * A user-configurable color scheme stored in plugin settings.
@@ -86,6 +98,15 @@ export interface MonthLabel {
 	name: string;
 	startColumn: number;
 	endColumn: number;
+}
+
+/**
+ * Month label position for vertical layout rendering.
+ */
+export interface VerticalMonthLabel {
+	name: string;
+	startRow: number;
+	endRow: number;
 }
 
 /**

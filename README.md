@@ -14,6 +14,8 @@ A GitHub-contributions-style heatmap view for [Obsidian Bases](https://help.obsi
 - Customizable color schemes (5 built-in, add your own in Settings)
 - Light and dark theme support
 - Configurable date ranges
+- Layout direction (horizontal or vertical)
+- Cell size presets (small, medium, large)
 - Click cells to open corresponding notes
 - Keyboard navigation support
 
@@ -126,6 +128,8 @@ In the Heatmap settings:
 | Week starts on | Sunday or Monday |
 | Show weekday labels | Toggle Mon/Wed/Fri labels |
 | Show month labels | Toggle month labels at top |
+| Layout direction | Horizontal (GitHub-style) or vertical (calendar-style) |
+| Cell size | Small (11px), medium (16px), or large (24px) |
 
 ## Color Interpretation
 
@@ -159,4 +163,3 @@ Linting runs automatically on staged files before each commit via husky pre-comm
 ### Releasing
 
 See [RELEASING.md](RELEASING.md) for the complete release process and version management.
-

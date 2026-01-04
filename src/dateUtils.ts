@@ -1,6 +1,8 @@
-import { DateRange, MonthLabel } from './types';
+import { DateRange, MonthLabel, VerticalMonthLabel } from './types';
 
 const ISO_DATE_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+	'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /**
  * Parse an ISO date string (YYYY-MM-DD) into a Date at local midnight.
@@ -243,9 +245,6 @@ export function generateMonthLabels(
 	rangeEnd: Date,
 	weekStart: 0 | 1
 ): MonthLabel[] {
-	const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-		'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
 	// Track which weeks belong to which month
 	// A week belongs to a month if it has any days from that month
 	const weekToMonths = new Map<number, Set<number>>(); // week -> set of months
@@ -299,7 +298,7 @@ export function generateMonthLabels(
 			}
 
 			currentLabel = {
-				name: monthNames[primaryMonth],
+				name: MONTH_NAMES[primaryMonth],
 				startColumn: week,
 				endColumn: totalWeeks + 1, // Will be updated
 			};
@@ -311,6 +310,73 @@ export function generateMonthLabels(
 	// Close the last label
 	if (currentLabel) {
 		currentLabel.endColumn = totalWeeks + 1;
+	}
+
+	return labels;
+}
+
+/**
+ * Generate month labels for vertical layout.
+ * Each label spans the week rows where that month has days.
+ */
+export function generateVerticalMonthLabels(
+	rangeStart: Date,
+	rangeEnd: Date,
+	weekStart: 0 | 1
+): VerticalMonthLabel[] {
+	// Track which weeks belong to which month
+	const weekToMonths = new Map<number, Set<number>>();
+
+	const current = new Date(rangeStart);
+	current.setHours(0, 0, 0, 0);
+
+	const end = new Date(rangeEnd);
+	end.setHours(0, 0, 0, 0);
+
+	while (current <= end) {
+		const month = current.getMonth();
+		const week = getWeekNumber(current, rangeStart, weekStart);
+
+		let monthSet = weekToMonths.get(week);
+		if (!monthSet) {
+			monthSet = new Set();
+			weekToMonths.set(week, monthSet);
+		}
+		monthSet.add(month);
+
+		current.setDate(current.getDate() + 1);
+	}
+
+	const labels: VerticalMonthLabel[] = [];
+	const totalWeeks = getWeekNumber(end, rangeStart, weekStart);
+
+	let currentMonth = -1;
+	let currentLabel: VerticalMonthLabel | null = null;
+
+	for (let week = 1; week <= totalWeeks; week++) {
+		const monthsInWeek = weekToMonths.get(week);
+		if (!monthsInWeek) continue;
+
+		const monthsArray = Array.from(monthsInWeek).sort((a, b) => a - b);
+		const primaryMonth = monthsArray[monthsArray.length - 1];
+
+		if (primaryMonth !== currentMonth) {
+			if (currentLabel) {
+				currentLabel.endRow = week;
+			}
+
+			currentLabel = {
+				name: MONTH_NAMES[primaryMonth],
+				startRow: week,
+				endRow: totalWeeks + 1,
+			};
+			labels.push(currentLabel);
+			currentMonth = primaryMonth;
+		}
+	}
+
+	if (currentLabel) {
+		currentLabel.endRow = totalWeeks + 1;
 	}
 
 	return labels;

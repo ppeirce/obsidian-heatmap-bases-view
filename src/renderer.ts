@@ -1,11 +1,23 @@
-import { HeatmapEntry, ProcessedData, CellState, MonthLabel, DateRange } from './types';
+import {
+	HeatmapEntry,
+	ProcessedData,
+	CellState,
+	MonthLabel,
+	DateRange,
+	LayoutDirection,
+	CellSizePreset,
+	CELL_SIZE_VALUES,
+	VerticalMonthLabel,
+} from './types';
 import {
 	generateDateRange,
 	getDayOfWeek,
 	getWeekNumber,
 	generateMonthLabels,
+	generateVerticalMonthLabels,
 	getWeekdayLabels,
 	parseISODateString,
+	formatDateDisplay,
 } from './dateUtils';
 import {
 	calculateIntensityNumeric,
@@ -20,6 +32,8 @@ export interface RenderOptions {
 	weekStart: 0 | 1;
 	showWeekdayLabels: boolean;
 	showMonthLabels: boolean;
+	layoutDirection: LayoutDirection;
+	cellSize: CellSizePreset;
 }
 
 /**
@@ -90,6 +104,10 @@ function createCellElement(
 		cell.dataset.displayValue = entry.displayValue;
 	}
 
+	const formattedDate = formatDateDisplay(date);
+	const displayValue = entry ? entry.displayValue : 'No note';
+	cell.setAttribute('aria-label', `${formattedDate}: ${displayValue}`);
+
 	return cell;
 }
 
@@ -102,7 +120,7 @@ function createMonthLabelsRow(
 	totalWeeks: number
 ): HTMLElement {
 	const row = document.createElement('div');
-	row.className = 'heatmap-month-labels';
+	row.className = 'heatmap-month-labels heatmap-month-labels-horizontal';
 
 	// Set the number of columns to match the cells grid
 	row.style.setProperty('--total-weeks', String(totalWeeks));
@@ -120,7 +138,7 @@ function createMonthLabelsRow(
 }
 
 /**
- * Create the weekday labels column.
+ * Create the weekday labels column for horizontal layout.
  */
 function createWeekdayLabels(weekStart: 0 | 1): HTMLElement {
 	const container = document.createElement('div');
@@ -137,6 +155,47 @@ function createWeekdayLabels(weekStart: 0 | 1): HTMLElement {
 		if (indices.includes(i)) {
 			span.textContent = labels[i];
 		}
+		container.appendChild(span);
+	}
+
+	return container;
+}
+
+/**
+ * Create the month labels column for vertical layout.
+ */
+function createVerticalMonthLabelsColumn(
+	monthLabels: VerticalMonthLabel[],
+	totalWeeks: number
+): HTMLElement {
+	const column = document.createElement('div');
+	column.className = 'heatmap-month-labels heatmap-month-labels-vertical';
+	column.style.setProperty('--total-weeks', String(totalWeeks));
+
+	for (const label of monthLabels) {
+		const span = document.createElement('span');
+		span.className = 'heatmap-month-label';
+		span.textContent = label.name;
+		span.style.gridRowStart = String(label.startRow);
+		span.style.gridRowEnd = String(label.endRow);
+		column.appendChild(span);
+	}
+
+	return column;
+}
+
+/**
+ * Create the weekday labels row for vertical layout.
+ */
+function createWeekdayLabelsRow(weekStart: 0 | 1): HTMLElement {
+	const container = document.createElement('div');
+	container.className = 'heatmap-weekday-labels-horizontal';
+
+	const labels = getWeekdayLabels(weekStart);
+	for (const label of labels) {
+		const span = document.createElement('span');
+		span.className = 'heatmap-weekday-label';
+		span.textContent = label;
 		container.appendChild(span);
 	}
 
@@ -177,13 +236,17 @@ export function renderHeatmap(
 	options: RenderOptions
 ): HTMLElement {
 	const { entries, stats } = data;
-	const { schemeDefinition, weekStart, showWeekdayLabels, showMonthLabels } = options;
+	const {
+		schemeDefinition,
+		weekStart,
+		showWeekdayLabels,
+		showMonthLabels,
+		layoutDirection,
+		cellSize,
+	} = options;
 
 	// Generate all dates in range
 	const allDates = generateDateRange(dateRange.start, dateRange.end);
-
-	// Generate month labels
-	const monthLabels = generateMonthLabels(dateRange.start, dateRange.end, weekStart);
 
 	// Calculate total number of weeks for grid sizing
 	const totalWeeks = getWeekNumber(dateRange.end, dateRange.start, weekStart);
@@ -191,6 +254,10 @@ export function renderHeatmap(
 	// Create main container
 	const container = document.createElement('div');
 	container.className = 'heatmap-container';
+	container.classList.add(
+		layoutDirection === 'vertical' ? 'heatmap--vertical' : 'heatmap--horizontal'
+	);
+	container.style.setProperty('--cell-size', `${CELL_SIZE_VALUES[cellSize]}px`);
 
 	// Apply theme class
 	if (isDarkMode()) {
@@ -202,33 +269,31 @@ export function renderHeatmap(
 	// Create scroll wrapper
 	const scrollWrapper = document.createElement('div');
 	scrollWrapper.className = 'heatmap-scroll-wrapper';
+	if (layoutDirection === 'vertical') {
+		scrollWrapper.classList.add('heatmap-scroll-wrapper--vertical');
+	}
 
 	// Create inner wrapper that holds month labels and grid together
 	const innerWrapper = document.createElement('div');
 	innerWrapper.className = 'heatmap-inner-wrapper';
-	if (showWeekdayLabels) {
+	if (showWeekdayLabels && layoutDirection === 'horizontal') {
 		innerWrapper.classList.add('heatmap-inner-wrapper--with-labels');
-	}
-
-	// Add month labels if enabled
-	if (showMonthLabels) {
-		innerWrapper.appendChild(createMonthLabelsRow(monthLabels, totalWeeks));
 	}
 
 	// Create grid container
 	const grid = document.createElement('div');
 	grid.className = 'heatmap-grid';
 
-	// Add weekday labels if enabled
-	if (showWeekdayLabels) {
-		grid.appendChild(createWeekdayLabels(weekStart));
-	}
-
 	// Create cells container
 	const cellsContainer = document.createElement('div');
 	cellsContainer.className = 'heatmap-cells';
+	cellsContainer.classList.add(
+		layoutDirection === 'vertical' ? 'heatmap-cells--vertical' : 'heatmap-cells--horizontal'
+	);
+	cellsContainer.setAttribute('role', 'grid');
 
 	// Create cells for each date
+	const cellFragment = document.createDocumentFragment();
 	for (const dateStr of allDates) {
 		const date = parseISODateString(dateStr) ?? new Date(dateStr);
 		if (isNaN(date.getTime())) {
@@ -239,21 +304,54 @@ export function renderHeatmap(
 
 		const state = getCellState(dateStr, entries, stats);
 		const entry = entries.get(dateStr);
+		const row = layoutDirection === 'vertical' ? weekNum : dayOfWeek + 1;
+		const column = layoutDirection === 'vertical' ? dayOfWeek + 1 : weekNum;
 
 		const cell = createCellElement(
 			dateStr,
 			state,
-			dayOfWeek + 1, // 1-indexed for CSS grid
-			weekNum,
+			row,
+			column,
 			entry,
 			schemeDefinition
 		);
 
-		cellsContainer.appendChild(cell);
+		cellFragment.appendChild(cell);
+	}
+	cellsContainer.appendChild(cellFragment);
+
+	if (layoutDirection === 'vertical') {
+		grid.classList.add('heatmap-grid--vertical');
+		if (showWeekdayLabels) {
+			const weekdayRow = createWeekdayLabelsRow(weekStart);
+			if (showMonthLabels) {
+				weekdayRow.classList.add('heatmap-weekday-labels-horizontal--with-months');
+			}
+			grid.appendChild(weekdayRow);
+		}
+		const gridBody = document.createElement('div');
+		gridBody.className = 'heatmap-grid-body';
+
+		if (showMonthLabels) {
+			const monthLabels = generateVerticalMonthLabels(dateRange.start, dateRange.end, weekStart);
+			gridBody.appendChild(createVerticalMonthLabelsColumn(monthLabels, totalWeeks));
+		}
+
+		gridBody.appendChild(cellsContainer);
+		grid.appendChild(gridBody);
+		innerWrapper.appendChild(grid);
+	} else {
+		if (showMonthLabels) {
+			const monthLabels = generateMonthLabels(dateRange.start, dateRange.end, weekStart);
+			innerWrapper.appendChild(createMonthLabelsRow(monthLabels, totalWeeks));
+		}
+		if (showWeekdayLabels) {
+			grid.appendChild(createWeekdayLabels(weekStart));
+		}
+		grid.appendChild(cellsContainer);
+		innerWrapper.appendChild(grid);
 	}
 
-	grid.appendChild(cellsContainer);
-	innerWrapper.appendChild(grid);
 	scrollWrapper.appendChild(innerWrapper);
 	container.appendChild(scrollWrapper);
 

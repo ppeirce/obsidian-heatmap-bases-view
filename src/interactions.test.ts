@@ -498,6 +498,62 @@ describe('interactions', () => {
 			expect(mockPreventDefault).toHaveBeenCalled();
 		});
 
+		it('moves by week when horizontal layout uses ArrowRight', () => {
+			const startCell = document.createElement('div');
+			startCell.className = 'heatmap-cell';
+			startCell.dataset.date = '2024-01-15';
+
+			const targetCell = document.createElement('div');
+			targetCell.className = 'heatmap-cell';
+			targetCell.dataset.date = '2024-01-22';
+
+			containerEl.appendChild(startCell);
+			containerEl.appendChild(targetCell);
+
+			setupInteractions({
+				app: mockApp,
+				entries,
+				containerEl,
+				plugin: mockPlugin,
+				layoutDirection: 'horizontal',
+			});
+
+			startCell.focus();
+			const event = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true });
+			Object.defineProperty(event, 'target', { value: startCell });
+			containerEl.dispatchEvent(event);
+
+			expect(document.activeElement).toBe(targetCell);
+		});
+
+		it('moves by day when vertical layout uses ArrowRight', () => {
+			const startCell = document.createElement('div');
+			startCell.className = 'heatmap-cell';
+			startCell.dataset.date = '2024-01-15';
+
+			const targetCell = document.createElement('div');
+			targetCell.className = 'heatmap-cell';
+			targetCell.dataset.date = '2024-01-16';
+
+			containerEl.appendChild(startCell);
+			containerEl.appendChild(targetCell);
+
+			setupInteractions({
+				app: mockApp,
+				entries,
+				containerEl,
+				plugin: mockPlugin,
+				layoutDirection: 'vertical',
+			});
+
+			startCell.focus();
+			const event = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true });
+			Object.defineProperty(event, 'target', { value: startCell });
+			containerEl.dispatchEvent(event);
+
+			expect(document.activeElement).toBe(targetCell);
+		});
+
 		it('ignores non-arrow keys', () => {
 			const cell = document.createElement('div');
 			cell.className = 'heatmap-cell';

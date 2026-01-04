@@ -85,6 +85,27 @@ export default class HeatmapPlugin extends Plugin {
 					default: true,
 				},
 				{
+					type: 'dropdown',
+					key: 'layoutDirection',
+					displayName: 'Layout direction',
+					default: 'horizontal',
+					options: {
+						'horizontal': 'Horizontal (GitHub-style)',
+						'vertical': 'Vertical (calendar-style)',
+					},
+				},
+				{
+					type: 'dropdown',
+					key: 'cellSize',
+					displayName: 'Cell size',
+					default: 'small',
+					options: {
+						'small': 'Small (11px)',
+						'medium': 'Medium (16px)',
+						'large': 'Large (24px)',
+					},
+				},
+				{
 					type: 'text',
 					key: 'minValue',
 					displayName: 'Min value',
