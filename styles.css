@@ -132,7 +132,7 @@
 }
 
 .heatmap-weekday-labels-horizontal--with-months {
-	padding-left: calc(var(--weekday-label-width) + var(--size-4-1));
+	padding-left: calc(var(--weekday-label-width) + var(--size-4-1) + 7px);
 }
 
 .heatmap-weekday-labels-horizontal .heatmap-weekday-label {
