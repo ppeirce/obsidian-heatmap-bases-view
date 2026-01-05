@@ -290,6 +290,7 @@ export function renderHeatmap(
 	cellsContainer.classList.add(
 		layoutDirection === 'vertical' ? 'heatmap-cells--vertical' : 'heatmap-cells--horizontal'
 	);
+	cellsContainer.style.setProperty('--total-weeks', String(totalWeeks));
 	cellsContainer.setAttribute('role', 'grid');
 
 	// Create cells for each date

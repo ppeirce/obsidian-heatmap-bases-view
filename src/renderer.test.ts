@@ -45,6 +45,9 @@ describe('renderHeatmap', () => {
 		expect(heatmap.classList.contains('heatmap--horizontal')).toBe(true);
 		expect(heatmap.style.getPropertyValue('--cell-size'))
 			.toBe(`${CELL_SIZE_VALUES.medium}px`);
+
+		const grid = heatmap.querySelector('.heatmap-cells') as HTMLElement;
+		expect(grid.style.getPropertyValue('--total-weeks')).toBe('1');
 	});
 
 	it('adds role and aria-labels for accessibility', () => {
